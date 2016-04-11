@@ -17,6 +17,14 @@ function Scope() {
   this.$$phase = null;
 }
 
+Scope.prototype.$new = function() {
+  var childScope = function() {};
+  childScope.prototype = this;
+  var child = new childScope();
+  Scope.call(child);
+  return child;
+};
+
 Scope.prototype.$watch = function(watchFn, listenerFn, valueEq) {
   var self = this;
   var watcher = {

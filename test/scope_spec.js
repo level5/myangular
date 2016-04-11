@@ -856,7 +856,138 @@ describe('Scope', function() {
 
         counter.should.eql(0);
       })
+    });
 
+    describe('inheritance', function() {
+
+      it("inherits the parent's proterties.", function() {
+        var parent = new Scope();
+
+        parent.aValue = [1, 2, 3];
+        var child = parent.$new();
+
+        child.aValue.should.eql([1, 2, 3]);
+      });
+
+      it("does not cause a parent to inherit its properties.", function() {
+        var parent = new Scope();
+        var child = parent.$new();
+
+        child.aValue = [1, 2, 3];
+        should(parent.aValue).be.undefined();
+      });
+
+      it("inherits the parent's proterties whenever they are defined.", function() {
+        var parent = new Scope();
+        var child = parent.$new();
+
+        parent.aValue = [1, 2, 3];
+
+        child.aValue.should.eql([1, 2, 3]);
+      });
+
+      it("can manipulate a parent scope's property.", function() {
+        var parent = new Scope();
+        var child = parent.$new();
+
+        parent.aValue = [1, 2, 3];
+        child.aValue.push(4);
+
+        child.aValue.should.eql([1, 2, 3, 4]);
+        parent.aValue.should.eql([1, 2, 3, 4]);
+      });
+
+      it("can watch a property in the parent.", function() {
+        var parent = new Scope();
+        var child = parent.$new();
+
+        parent.aValue = [1, 2, 3];
+        child.counter = 0;
+
+        child.$watch(
+          function(scope) {return scope.aValue;},
+          function(newValue, oldValue, scope) {
+            scope.counter++;
+          },
+          true
+        );
+
+        child.$digest();
+        child.counter.should.eql(1);
+
+        parent.aValue.push(4);
+        child.$digest();
+        child.counter.should.eql(2);
+      });
+
+      it('can be nested at any depth', function() {
+        var a = new Scope();
+        var aa = a.$new();
+        var aaa = aa.$new();
+        var ab = a.$new();
+        var abb = ab.$new();
+
+        a.value = 1;
+
+        aa.value.should.eql(1);
+        aaa.value.should.eql(1);
+        ab.value.should.eql(1);
+        abb.value.should.eql(1);
+
+        ab.anotherValue = 2;
+
+        abb.anotherValue.should.eql(2);
+        should(aa.anotherValue).be.undefined();
+        should(aaa.anotherValue).be.undefined();
+      });
+
+      it("shadows a parent's property with the same name.", function() {
+        var parent = new Scope();
+        var child = parent.$new();
+
+        parent.name = 'Joe';
+        child.name = 'Jill';
+
+        child.name.should.eql('Jill');
+        parent.name.should.eql('Joe');
+      });
+
+      it("does not shadow members of parent scope's attributes.", function() {
+
+        var parent = new Scope();
+        var child = parent.$new();
+
+        parent.user = {name: 'Joe'};
+        child.user.name = 'Jill';
+
+        child.user.name.should.eql('Jill');
+        parent.user.name.should.eql('Jill');
+      });
+
+      it("does not digest its parent(s).", function() {
+        var parent  = new Scope();
+        var child = parent.$new();
+
+        parent.aValue = 'abc';
+        parent.$watch(
+          function(scope) {return scope.aValue;},
+          function(newValue, oldValue, scope) {
+            scope.aValueWas = newValue;
+          }
+        );
+
+        child.$digest();
+        should(child.aValueWas).be.undefined();
+      });
+
+      it("keeps a record of its children.", function() {
+        var parent = new Scope();
+        var child1 = parent.$new();
+        var child2 = parent.$new();
+        var child2_1 = child2.$new();
+
+
+      });
     });
   });
 });
