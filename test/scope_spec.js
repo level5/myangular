@@ -986,8 +986,96 @@ describe('Scope', function() {
         var child2 = parent.$new();
         var child2_1 = child2.$new();
 
+        parent.$$children.length.should.eql(2);
+        parent.$$children[0].should.exactly(child1);
+        parent.$$children[1].should.exactly(child2);
+
+        child1.$$children.length.should.eql(0);
+
+        child2.$$children.length.should.eql(1);
+        child2.$$children[0].should.exactly(child2_1)
+      });
+
+      it("digests its children", function() {
+
+        var parent = new Scope();
+        var child = parent.$new();
+
+        parent.aValue = 'abc';
+        child.$watch(
+          function(scope) {return scope.aValue;},
+          function(newValue, oldValue, scope) {
+            scope.aValueWas = newValue;
+          }
+        );
+
+          parent.$digest();
+          child.aValueWas.should.eql('abc');
 
       });
+
+      it('digests from root on $apply', function() {
+        var parent = new Scope();
+        var child = parent.$new();
+        var child2 = child.$new();
+
+        parent.aValue = 'abc';
+        parent.counter = 0;
+        parent.$watch(
+          function(scope) {return scope.aValue;},
+          function(newValue, oldValue, scope) {
+            scope.counter++;
+          }
+        );
+
+        child2.$apply(function(scope) {});
+        parent.counter.should.eql(1);
+      });
+
+      it('schedules a digest from root on $evalAsync.', function(done) {
+        var parent = new Scope();
+        var child = parent.$new();
+        var child2 = child.$new();
+
+        parent.aValue = 'abc';
+        parent.counter = 0;
+        parent.$watch(
+          function(scope) {return scope.aValue;},
+          function(newValue, oldValue, scope) {
+            scope.counter++;
+          }
+        );
+
+        child2.$evalAsync(function(scope) {});
+        setTimeout(function() {
+          parent.counter.should.eql(1);
+          done();
+        }, 50);
+      });
+
+      it('does not have access to parent attributes when isolated.', function() {
+        var parent = new Scope();
+        var child = parent.$new(true);
+
+        parent.aValue = 'abc';
+        should(child.aValue).be.undefined();
+      });
+
+      it('cannot watch parent attributes when isolated.', function() {
+        var parent = new Scope();
+        var child = parent.$new(true);
+
+        parent.aValue = 'abc';
+        child.$watch(
+          function(scope) {return scope.aValue;},
+          function(newValue, oldValue, scope) {
+            scope.aValueWas = newValue;
+          }
+        );
+        child.$digest();
+        should(child.aValueWas).be.undefined();
+      });
+
     });
   });
 });

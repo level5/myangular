@@ -6,7 +6,8 @@
     "describe": false,
     "it": false,
     "beforeEach": false,
-    "afterEach": false
+    "afterEach": false,
+    "should": false
   },
   "esnext": true
 }
