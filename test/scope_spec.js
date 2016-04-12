@@ -1076,6 +1076,94 @@ describe('Scope', function() {
         should(child.aValueWas).be.undefined();
       });
 
+      it('digests its isolated children.', function() {
+        var parent = new Scope();
+        var child = parent.$new(true);
+
+        child.aValue = 'abc';
+        child.$watch(
+          function(scope) {return scope.aValue;},
+          function(newValue, oldValue, scope) {
+            scope.aValueWas = newValue;
+          }
+        );
+
+        parent.$digest();
+        child.aValueWas.should.eql('abc');
+      });
+
+      it('digests from root on $apply when isolated.', function() {
+        var parent = new Scope();
+        var child = parent.$new(true);
+        var child2 = child.$new();
+
+        parent.aValue = 'abc';
+        parent.counter = 0;
+        parent.$watch(
+          function(scope) {return scope.aValue;},
+          function(newValue, oldValue, scope) {
+            scope.counter++;
+          }
+        );
+
+        child2.$apply(function(scope) {});
+
+        parent.counter.should.eql(1);
+      });
+
+      it('schedules a digest from root on $evalAsync when isolated.', function(done) {
+        var parent = new Scope();
+        var child = parent.$new(true);
+        var child2 = child.$new();
+
+        parent.aValue = 'abc';
+        parent.counter = 0;
+        parent.$watch(
+          function(scope) {return scope.aValue;},
+          function(newValue, oldValue, scope) {
+            scope.counter++;
+          }
+        );
+
+        child2.$evalAsync(function(scope) {});
+
+        setTimeout(function() {
+          parent.counter.should.eql(1);
+          done();
+        }, 50);
+      });
+
+      it("executes $evalAsync function on isolate scopes", function(done) {
+        var parent = new Scope();
+        var child = parent.$new(true);
+
+        child.$evalAsync(function(scope) {
+          scope.didEvalAsync = true;
+        });
+
+        setTimeout(function() {
+          child.didEvalAsync.should.be.true();
+          done();
+        }, 50);
+      });
+
+      it("executes $$postDigest function on isolated scopes", function() {
+        var parent = new Scope();
+        var child = parent.$new(true);
+
+        child.$$postDigest(function() {
+          child.didPostDigest = true;
+        });
+
+        parent.$digest();
+
+        child.didPostDigest.should.be.true();
+      });
+
+      it('xxx', function() {});
+
+
+
     });
   });
 });
