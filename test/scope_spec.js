@@ -1160,9 +1160,54 @@ describe('Scope', function() {
         child.didPostDigest.should.be.true();
       });
 
-      it('xxx', function() {});
+      it('can take some other scope as the parent.', function() {
+        var prototypeParent = new Scope();
+        var hierarchyParent = new Scope();
 
+        var child = prototypeParent.$new(false, hierarchyParent);
 
+        prototypeParent.a = 42;
+        child.a.should.eql(42);
+
+        child.counter = 0;
+        child.$watch(function(scope) {
+          scope.counter++;
+        });
+
+        prototypeParent.$digest();
+        child.counter.should.eql(0);
+
+        hierarchyParent.$digest();
+        child.counter.should.eql(2);
+      });
+
+      it('is no longer digested when $destroy has been called.', function() {
+
+        var parent  = new Scope();
+        var child = parent.$new();
+
+        child.aValue = [1, 2, 3];
+        child.counter = 0;
+        child.$watch(
+          function(scope) {return scope.aValue;},
+          function(newValue, oldValue, scope) {
+            scope.counter++;
+          },
+          true
+        );
+
+        parent.$digest();
+        child.counter.should.eql(1);
+
+        child.aValue.push(4);
+        parent.$digest();
+        child.counter.should.eql(2);
+
+        child.$destroy();
+        child.aValue.push(5);
+        parent.$digest();
+        child.counter.should.eql(2);
+      });
 
     });
   });
