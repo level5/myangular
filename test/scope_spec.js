@@ -720,495 +720,551 @@ describe('Scope', function() {
       scope.counter.should.eql(0);
     });
 
-    describe('$watchGroup', function() {
+  });
 
-      var scope;
+  describe('$watchGroup', function() {
 
-      beforeEach(function() {
-        scope = new Scope();
-      });
+    var scope;
 
-      it('takes watches as an array and calls listener with arrays.', function() {
-
-        var gotNewvalues, gotOldValues;
-
-        scope.aValue = 1;
-        scope.anotherValue = 2;
-
-        scope.$watchGroup([
-          function(scope) {return scope.aValue;},
-          function(scope) {return scope.anotherValue;}
-        ], function(newValues, oldValues, scope) {
-          gotNewvalues = newValues;
-          gotOldValues = oldValues;
-        });
-
-        scope.$digest();
-
-        gotNewvalues.should.eql([1, 2]);
-        gotOldValues.should.eql([1, 2]);
-      });
-
-      it('only calls listener once per digest.', function() {
-
-        var counter = 0;
-
-        scope.aValue = 1;
-        scope.anotherValue = 2;
-
-        scope.$watchGroup([
-          function(scope) {return scope.aValue;},
-          function(scope) {return scope.anotherValue;}
-        ], function(newValues, oldValues, scope) {
-          counter++;
-        });
-
-        scope.$digest();
-        counter.should.eql(1);
-      });
-
-      it('uses the same array of old and new values on first run.', function() {
-
-        var gotNewValues, gotOldValues;
-
-        scope.aValue = 1;
-        scope.aValue = 2;
-
-        scope.$watchGroup([
-          function(scope) {return scope.aValue;},
-          function(scope) {return scope.anotherValue;}
-        ], function(newValues, oldValues, scope) {
-          gotNewValues = newValues;
-          gotOldValues = oldValues;
-        });
-
-        scope.$digest();
-        gotNewValues.should.be.exactly(gotOldValues);
-      });
-
-      it('uses different arrays for old and new values on subsequent runs.', function() {
-
-        var gotNewValues, gotOldValues;
-
-        scope.aValue = 1;
-        scope.anotherValue = 2;
-
-        scope.$watchGroup([
-          function(scope) {return scope.aValue;},
-          function(scope) {return scope.anotherValue;}
-        ], function(newValues, oldValues, scope) {
-          gotNewValues = newValues;
-          gotOldValues = oldValues;
-        });
-
-        scope.$digest();
-        gotNewValues.should.be.exactly(gotOldValues);
-
-        scope.anotherValue = 3;
-        scope.$digest();
-        gotNewValues.should.eql([1, 3]);
-        gotOldValues.should.eql([1, 2]);
-      });
-
-      it('calls the listener once when the watch array is empty.', function() {
-        var gotNewValues, gotOldValues;
-        scope.$watchGroup([], function(newValues, oldValues, scope) {
-          gotNewValues = newValues;
-          gotOldValues = oldValues;
-        });
-
-        scope.$digest();
-        gotNewValues.should.eql([]);
-        gotOldValues.should.eql([]);
-      });
-
-      it('can be deregistered.', function() {
-        var counter = 0;
-
-        scope.aValue = 1;
-        scope.anotherValue = 2;
-
-        var destroyGroup = scope.$watchGroup([
-          function(scope) {return scope.aValue;},
-          function(scope) {return scope.anotherValue;}
-        ], function(newValues, oldValues, scope) {
-          counter++;
-        });
-
-        scope.$digest();
-        scope.anotherValue = 3;
-        destroyGroup();
-        scope.$digest();
-
-        counter.should.eql(1);
-
-      });
-
-      it('does not call the zero-watch listner when deregistered first.', function() {
-        var counter = 0;
-
-        var destroyGroup = scope.$watchGroup([], function(newValues, oldValues, scope) {
-          counter++;
-        });
-
-        destroyGroup();
-        scope.$digest();
-
-        counter.should.eql(0);
-      })
+    beforeEach(function() {
+      scope = new Scope();
     });
 
-    describe('inheritance', function() {
+    it('takes watches as an array and calls listener with arrays.', function() {
 
-      it("inherits the parent's proterties.", function() {
-        var parent = new Scope();
+      var gotNewvalues, gotOldValues;
 
-        parent.aValue = [1, 2, 3];
-        var child = parent.$new();
+      scope.aValue = 1;
+      scope.anotherValue = 2;
 
-        child.aValue.should.eql([1, 2, 3]);
+      scope.$watchGroup([
+        function(scope) {return scope.aValue;},
+        function(scope) {return scope.anotherValue;}
+      ], function(newValues, oldValues, scope) {
+        gotNewvalues = newValues;
+        gotOldValues = oldValues;
       });
 
-      it("does not cause a parent to inherit its properties.", function() {
-        var parent = new Scope();
-        var child = parent.$new();
+      scope.$digest();
 
-        child.aValue = [1, 2, 3];
-        should(parent.aValue).be.undefined();
+      gotNewvalues.should.eql([1, 2]);
+      gotOldValues.should.eql([1, 2]);
+    });
+
+    it('only calls listener once per digest.', function() {
+
+      var counter = 0;
+
+      scope.aValue = 1;
+      scope.anotherValue = 2;
+
+      scope.$watchGroup([
+        function(scope) {return scope.aValue;},
+        function(scope) {return scope.anotherValue;}
+      ], function(newValues, oldValues, scope) {
+        counter++;
       });
 
-      it("inherits the parent's proterties whenever they are defined.", function() {
-        var parent = new Scope();
-        var child = parent.$new();
+      scope.$digest();
+      counter.should.eql(1);
+    });
 
-        parent.aValue = [1, 2, 3];
+    it('uses the same array of old and new values on first run.', function() {
 
-        child.aValue.should.eql([1, 2, 3]);
+      var gotNewValues, gotOldValues;
+
+      scope.aValue = 1;
+      scope.aValue = 2;
+
+      scope.$watchGroup([
+        function(scope) {return scope.aValue;},
+        function(scope) {return scope.anotherValue;}
+      ], function(newValues, oldValues, scope) {
+        gotNewValues = newValues;
+        gotOldValues = oldValues;
       });
 
-      it("can manipulate a parent scope's property.", function() {
-        var parent = new Scope();
-        var child = parent.$new();
+      scope.$digest();
+      gotNewValues.should.be.exactly(gotOldValues);
+    });
 
-        parent.aValue = [1, 2, 3];
-        child.aValue.push(4);
+    it('uses different arrays for old and new values on subsequent runs.', function() {
 
-        child.aValue.should.eql([1, 2, 3, 4]);
-        parent.aValue.should.eql([1, 2, 3, 4]);
+      var gotNewValues, gotOldValues;
+
+      scope.aValue = 1;
+      scope.anotherValue = 2;
+
+      scope.$watchGroup([
+        function(scope) {return scope.aValue;},
+        function(scope) {return scope.anotherValue;}
+      ], function(newValues, oldValues, scope) {
+        gotNewValues = newValues;
+        gotOldValues = oldValues;
       });
 
-      it("can watch a property in the parent.", function() {
-        var parent = new Scope();
-        var child = parent.$new();
+      scope.$digest();
+      gotNewValues.should.be.exactly(gotOldValues);
 
-        parent.aValue = [1, 2, 3];
-        child.counter = 0;
+      scope.anotherValue = 3;
+      scope.$digest();
+      gotNewValues.should.eql([1, 3]);
+      gotOldValues.should.eql([1, 2]);
+    });
 
-        child.$watch(
-          function(scope) {return scope.aValue;},
-          function(newValue, oldValue, scope) {
-            scope.counter++;
-          },
-          true
-        );
-
-        child.$digest();
-        child.counter.should.eql(1);
-
-        parent.aValue.push(4);
-        child.$digest();
-        child.counter.should.eql(2);
+    it('calls the listener once when the watch array is empty.', function() {
+      var gotNewValues, gotOldValues;
+      scope.$watchGroup([], function(newValues, oldValues, scope) {
+        gotNewValues = newValues;
+        gotOldValues = oldValues;
       });
 
-      it('can be nested at any depth', function() {
-        var a = new Scope();
-        var aa = a.$new();
-        var aaa = aa.$new();
-        var ab = a.$new();
-        var abb = ab.$new();
+      scope.$digest();
+      gotNewValues.should.eql([]);
+      gotOldValues.should.eql([]);
+    });
 
-        a.value = 1;
+    it('can be deregistered.', function() {
+      var counter = 0;
 
-        aa.value.should.eql(1);
-        aaa.value.should.eql(1);
-        ab.value.should.eql(1);
-        abb.value.should.eql(1);
+      scope.aValue = 1;
+      scope.anotherValue = 2;
 
-        ab.anotherValue = 2;
-
-        abb.anotherValue.should.eql(2);
-        should(aa.anotherValue).be.undefined();
-        should(aaa.anotherValue).be.undefined();
+      var destroyGroup = scope.$watchGroup([
+        function(scope) {return scope.aValue;},
+        function(scope) {return scope.anotherValue;}
+      ], function(newValues, oldValues, scope) {
+        counter++;
       });
 
-      it("shadows a parent's property with the same name.", function() {
-        var parent = new Scope();
-        var child = parent.$new();
+      scope.$digest();
+      scope.anotherValue = 3;
+      destroyGroup();
+      scope.$digest();
 
-        parent.name = 'Joe';
-        child.name = 'Jill';
+      counter.should.eql(1);
 
-        child.name.should.eql('Jill');
-        parent.name.should.eql('Joe');
+    });
+
+    it('does not call the zero-watch listner when deregistered first.', function() {
+      var counter = 0;
+
+      var destroyGroup = scope.$watchGroup([], function(newValues, oldValues, scope) {
+        counter++;
       });
 
-      it("does not shadow members of parent scope's attributes.", function() {
+      destroyGroup();
+      scope.$digest();
 
-        var parent = new Scope();
-        var child = parent.$new();
+      counter.should.eql(0);
+    })
+  });
 
-        parent.user = {name: 'Joe'};
-        child.user.name = 'Jill';
+  describe('inheritance', function() {
 
-        child.user.name.should.eql('Jill');
-        parent.user.name.should.eql('Jill');
-      });
+    it("inherits the parent's proterties.", function() {
+      var parent = new Scope();
 
-      it("does not digest its parent(s).", function() {
-        var parent  = new Scope();
-        var child = parent.$new();
+      parent.aValue = [1, 2, 3];
+      var child = parent.$new();
 
-        parent.aValue = 'abc';
-        parent.$watch(
-          function(scope) {return scope.aValue;},
-          function(newValue, oldValue, scope) {
-            scope.aValueWas = newValue;
-          }
-        );
+      child.aValue.should.eql([1, 2, 3]);
+    });
 
-        child.$digest();
-        should(child.aValueWas).be.undefined();
-      });
+    it("does not cause a parent to inherit its properties.", function() {
+      var parent = new Scope();
+      var child = parent.$new();
 
-      it("keeps a record of its children.", function() {
-        var parent = new Scope();
-        var child1 = parent.$new();
-        var child2 = parent.$new();
-        var child2_1 = child2.$new();
+      child.aValue = [1, 2, 3];
+      should(parent.aValue).be.undefined();
+    });
 
-        parent.$$children.length.should.eql(2);
-        parent.$$children[0].should.exactly(child1);
-        parent.$$children[1].should.exactly(child2);
+    it("inherits the parent's proterties whenever they are defined.", function() {
+      var parent = new Scope();
+      var child = parent.$new();
 
-        child1.$$children.length.should.eql(0);
+      parent.aValue = [1, 2, 3];
 
-        child2.$$children.length.should.eql(1);
-        child2.$$children[0].should.exactly(child2_1)
-      });
+      child.aValue.should.eql([1, 2, 3]);
+    });
 
-      it("digests its children", function() {
+    it("can manipulate a parent scope's property.", function() {
+      var parent = new Scope();
+      var child = parent.$new();
 
-        var parent = new Scope();
-        var child = parent.$new();
+      parent.aValue = [1, 2, 3];
+      child.aValue.push(4);
 
-        parent.aValue = 'abc';
-        child.$watch(
-          function(scope) {return scope.aValue;},
-          function(newValue, oldValue, scope) {
-            scope.aValueWas = newValue;
-          }
-        );
+      child.aValue.should.eql([1, 2, 3, 4]);
+      parent.aValue.should.eql([1, 2, 3, 4]);
+    });
 
-          parent.$digest();
-          child.aValueWas.should.eql('abc');
+    it("can watch a property in the parent.", function() {
+      var parent = new Scope();
+      var child = parent.$new();
 
-      });
+      parent.aValue = [1, 2, 3];
+      child.counter = 0;
 
-      it('digests from root on $apply', function() {
-        var parent = new Scope();
-        var child = parent.$new();
-        var child2 = child.$new();
+      child.$watch(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.counter++;
+        },
+        true
+      );
 
-        parent.aValue = 'abc';
-        parent.counter = 0;
-        parent.$watch(
-          function(scope) {return scope.aValue;},
-          function(newValue, oldValue, scope) {
-            scope.counter++;
-          }
-        );
+      child.$digest();
+      child.counter.should.eql(1);
 
-        child2.$apply(function(scope) {});
-        parent.counter.should.eql(1);
-      });
+      parent.aValue.push(4);
+      child.$digest();
+      child.counter.should.eql(2);
+    });
 
-      it('schedules a digest from root on $evalAsync.', function(done) {
-        var parent = new Scope();
-        var child = parent.$new();
-        var child2 = child.$new();
+    it('can be nested at any depth', function() {
+      var a = new Scope();
+      var aa = a.$new();
+      var aaa = aa.$new();
+      var ab = a.$new();
+      var abb = ab.$new();
 
-        parent.aValue = 'abc';
-        parent.counter = 0;
-        parent.$watch(
-          function(scope) {return scope.aValue;},
-          function(newValue, oldValue, scope) {
-            scope.counter++;
-          }
-        );
+      a.value = 1;
 
-        child2.$evalAsync(function(scope) {});
-        setTimeout(function() {
-          parent.counter.should.eql(1);
-          done();
-        }, 50);
-      });
+      aa.value.should.eql(1);
+      aaa.value.should.eql(1);
+      ab.value.should.eql(1);
+      abb.value.should.eql(1);
 
-      it('does not have access to parent attributes when isolated.', function() {
-        var parent = new Scope();
-        var child = parent.$new(true);
+      ab.anotherValue = 2;
 
-        parent.aValue = 'abc';
-        should(child.aValue).be.undefined();
-      });
+      abb.anotherValue.should.eql(2);
+      should(aa.anotherValue).be.undefined();
+      should(aaa.anotherValue).be.undefined();
+    });
 
-      it('cannot watch parent attributes when isolated.', function() {
-        var parent = new Scope();
-        var child = parent.$new(true);
+    it("shadows a parent's property with the same name.", function() {
+      var parent = new Scope();
+      var child = parent.$new();
 
-        parent.aValue = 'abc';
-        child.$watch(
-          function(scope) {return scope.aValue;},
-          function(newValue, oldValue, scope) {
-            scope.aValueWas = newValue;
-          }
-        );
-        child.$digest();
-        should(child.aValueWas).be.undefined();
-      });
+      parent.name = 'Joe';
+      child.name = 'Jill';
 
-      it('digests its isolated children.', function() {
-        var parent = new Scope();
-        var child = parent.$new(true);
+      child.name.should.eql('Jill');
+      parent.name.should.eql('Joe');
+    });
 
-        child.aValue = 'abc';
-        child.$watch(
-          function(scope) {return scope.aValue;},
-          function(newValue, oldValue, scope) {
-            scope.aValueWas = newValue;
-          }
-        );
+    it("does not shadow members of parent scope's attributes.", function() {
+
+      var parent = new Scope();
+      var child = parent.$new();
+
+      parent.user = {name: 'Joe'};
+      child.user.name = 'Jill';
+
+      child.user.name.should.eql('Jill');
+      parent.user.name.should.eql('Jill');
+    });
+
+    it("does not digest its parent(s).", function() {
+      var parent  = new Scope();
+      var child = parent.$new();
+
+      parent.aValue = 'abc';
+      parent.$watch(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.aValueWas = newValue;
+        }
+      );
+
+      child.$digest();
+      should(child.aValueWas).be.undefined();
+    });
+
+    it("keeps a record of its children.", function() {
+      var parent = new Scope();
+      var child1 = parent.$new();
+      var child2 = parent.$new();
+      var child2_1 = child2.$new();
+
+      parent.$$children.length.should.eql(2);
+      parent.$$children[0].should.exactly(child1);
+      parent.$$children[1].should.exactly(child2);
+
+      child1.$$children.length.should.eql(0);
+
+      child2.$$children.length.should.eql(1);
+      child2.$$children[0].should.exactly(child2_1)
+    });
+
+    it("digests its children", function() {
+
+      var parent = new Scope();
+      var child = parent.$new();
+
+      parent.aValue = 'abc';
+      child.$watch(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.aValueWas = newValue;
+        }
+      );
 
         parent.$digest();
         child.aValueWas.should.eql('abc');
-      });
-
-      it('digests from root on $apply when isolated.', function() {
-        var parent = new Scope();
-        var child = parent.$new(true);
-        var child2 = child.$new();
-
-        parent.aValue = 'abc';
-        parent.counter = 0;
-        parent.$watch(
-          function(scope) {return scope.aValue;},
-          function(newValue, oldValue, scope) {
-            scope.counter++;
-          }
-        );
-
-        child2.$apply(function(scope) {});
-
-        parent.counter.should.eql(1);
-      });
-
-      it('schedules a digest from root on $evalAsync when isolated.', function(done) {
-        var parent = new Scope();
-        var child = parent.$new(true);
-        var child2 = child.$new();
-
-        parent.aValue = 'abc';
-        parent.counter = 0;
-        parent.$watch(
-          function(scope) {return scope.aValue;},
-          function(newValue, oldValue, scope) {
-            scope.counter++;
-          }
-        );
-
-        child2.$evalAsync(function(scope) {});
-
-        setTimeout(function() {
-          parent.counter.should.eql(1);
-          done();
-        }, 50);
-      });
-
-      it("executes $evalAsync function on isolate scopes", function(done) {
-        var parent = new Scope();
-        var child = parent.$new(true);
-
-        child.$evalAsync(function(scope) {
-          scope.didEvalAsync = true;
-        });
-
-        setTimeout(function() {
-          child.didEvalAsync.should.be.true();
-          done();
-        }, 50);
-      });
-
-      it("executes $$postDigest function on isolated scopes", function() {
-        var parent = new Scope();
-        var child = parent.$new(true);
-
-        child.$$postDigest(function() {
-          child.didPostDigest = true;
-        });
-
-        parent.$digest();
-
-        child.didPostDigest.should.be.true();
-      });
-
-      it('can take some other scope as the parent.', function() {
-        var prototypeParent = new Scope();
-        var hierarchyParent = new Scope();
-
-        var child = prototypeParent.$new(false, hierarchyParent);
-
-        prototypeParent.a = 42;
-        child.a.should.eql(42);
-
-        child.counter = 0;
-        child.$watch(function(scope) {
-          scope.counter++;
-        });
-
-        prototypeParent.$digest();
-        child.counter.should.eql(0);
-
-        hierarchyParent.$digest();
-        child.counter.should.eql(2);
-      });
-
-      it('is no longer digested when $destroy has been called.', function() {
-
-        var parent  = new Scope();
-        var child = parent.$new();
-
-        child.aValue = [1, 2, 3];
-        child.counter = 0;
-        child.$watch(
-          function(scope) {return scope.aValue;},
-          function(newValue, oldValue, scope) {
-            scope.counter++;
-          },
-          true
-        );
-
-        parent.$digest();
-        child.counter.should.eql(1);
-
-        child.aValue.push(4);
-        parent.$digest();
-        child.counter.should.eql(2);
-
-        child.$destroy();
-        child.aValue.push(5);
-        parent.$digest();
-        child.counter.should.eql(2);
-      });
 
     });
+
+    it('digests from root on $apply', function() {
+      var parent = new Scope();
+      var child = parent.$new();
+      var child2 = child.$new();
+
+      parent.aValue = 'abc';
+      parent.counter = 0;
+      parent.$watch(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.counter++;
+        }
+      );
+
+      child2.$apply(function(scope) {});
+      parent.counter.should.eql(1);
+    });
+
+    it('schedules a digest from root on $evalAsync.', function(done) {
+      var parent = new Scope();
+      var child = parent.$new();
+      var child2 = child.$new();
+
+      parent.aValue = 'abc';
+      parent.counter = 0;
+      parent.$watch(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.counter++;
+        }
+      );
+
+      child2.$evalAsync(function(scope) {});
+      setTimeout(function() {
+        parent.counter.should.eql(1);
+        done();
+      }, 50);
+    });
+
+    it('does not have access to parent attributes when isolated.', function() {
+      var parent = new Scope();
+      var child = parent.$new(true);
+
+      parent.aValue = 'abc';
+      should(child.aValue).be.undefined();
+    });
+
+    it('cannot watch parent attributes when isolated.', function() {
+      var parent = new Scope();
+      var child = parent.$new(true);
+
+      parent.aValue = 'abc';
+      child.$watch(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.aValueWas = newValue;
+        }
+      );
+      child.$digest();
+      should(child.aValueWas).be.undefined();
+    });
+
+    it('digests its isolated children.', function() {
+      var parent = new Scope();
+      var child = parent.$new(true);
+
+      child.aValue = 'abc';
+      child.$watch(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.aValueWas = newValue;
+        }
+      );
+
+      parent.$digest();
+      child.aValueWas.should.eql('abc');
+    });
+
+    it('digests from root on $apply when isolated.', function() {
+      var parent = new Scope();
+      var child = parent.$new(true);
+      var child2 = child.$new();
+
+      parent.aValue = 'abc';
+      parent.counter = 0;
+      parent.$watch(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.counter++;
+        }
+      );
+
+      child2.$apply(function(scope) {});
+
+      parent.counter.should.eql(1);
+    });
+
+    it('schedules a digest from root on $evalAsync when isolated.', function(done) {
+      var parent = new Scope();
+      var child = parent.$new(true);
+      var child2 = child.$new();
+
+      parent.aValue = 'abc';
+      parent.counter = 0;
+      parent.$watch(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.counter++;
+        }
+      );
+
+      child2.$evalAsync(function(scope) {});
+
+      setTimeout(function() {
+        parent.counter.should.eql(1);
+        done();
+      }, 50);
+    });
+
+    it("executes $evalAsync function on isolate scopes", function(done) {
+      var parent = new Scope();
+      var child = parent.$new(true);
+
+      child.$evalAsync(function(scope) {
+        scope.didEvalAsync = true;
+      });
+
+      setTimeout(function() {
+        child.didEvalAsync.should.be.true();
+        done();
+      }, 50);
+    });
+
+    it("executes $$postDigest function on isolated scopes", function() {
+      var parent = new Scope();
+      var child = parent.$new(true);
+
+      child.$$postDigest(function() {
+        child.didPostDigest = true;
+      });
+
+      parent.$digest();
+
+      child.didPostDigest.should.be.true();
+    });
+
+    it('can take some other scope as the parent.', function() {
+      var prototypeParent = new Scope();
+      var hierarchyParent = new Scope();
+
+      var child = prototypeParent.$new(false, hierarchyParent);
+
+      prototypeParent.a = 42;
+      child.a.should.eql(42);
+
+      child.counter = 0;
+      child.$watch(function(scope) {
+        scope.counter++;
+      });
+
+      prototypeParent.$digest();
+      child.counter.should.eql(0);
+
+      hierarchyParent.$digest();
+      child.counter.should.eql(2);
+    });
+
+    it('is no longer digested when $destroy has been called.', function() {
+
+      var parent  = new Scope();
+      var child = parent.$new();
+
+      child.aValue = [1, 2, 3];
+      child.counter = 0;
+      child.$watch(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.counter++;
+        },
+        true
+      );
+
+      parent.$digest();
+      child.counter.should.eql(1);
+
+      child.aValue.push(4);
+      parent.$digest();
+      child.counter.should.eql(2);
+
+      child.$destroy();
+      child.aValue.push(5);
+      parent.$digest();
+      child.counter.should.eql(2);
+
+    });
+
   });
+
+  describe('$watchCollection', function() {
+
+    var scope;
+
+    beforeEach(function() {
+      scope = new Scope();
+    });
+
+    it('works like a normal watch for non-collections', function() {
+      var valueProvide;
+
+      scope.aValue = 42;
+      scope.counter = 0;
+
+      scope.$watchCollection(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          valueProvide = newValue;
+          scope.counter++;
+        }
+      );
+
+      scope.$digest();
+      scope.counter.should.eql(1);
+      valueProvide.should.eql(scope.aValue);
+
+      scope.aValue = 43;
+      scope.$digest();
+      scope.counter.should.eql(2);
+
+      scope.$digest();
+      scope.counter.should.eql(2);
+    });
+
+    it('works like a normal watch for NaNs.', function() {
+      scope.aValue = 0/0;
+      scope.counter = 0;
+
+      scope.$watchCollection(
+        function(scope) {return scope.aValue;},
+        function(newValue, oldValue, scope) {
+          scope.counter++;
+        }
+      );
+
+      scope.$digest();
+      scope.counter.should.eql(1);
+
+      scope.$digest();
+      scope.counter.should.eql(1);
+    });
+  });
+
 });

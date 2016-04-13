@@ -118,6 +118,26 @@ Scope.prototype.$watchGroup = function(watchFns, listenerFn) {
   };
 };
 
+Scope.prototype.$watchCollection = function(watchFn, listenerFn) {
+  var self = this;
+  var newValue;
+  var oldValue;
+  var changeCount = 0;
+
+  var internalWatchFn = function(scope) {
+    newValue = watchFn(scope);
+    if (self.$$areEqual(newValue, oldValue, false)) {
+      changeCount++;
+    }
+    oldValue = newValue;
+    return changeCount;
+  };
+  var internalListenerFn = function() {
+    listenerFn(oldValue, newValue, self);
+  };
+  return this.$watch(internalWatchFn, internalListenerFn);
+}
+
 Scope.prototype.$$areEqual = function(newValue, oldValue, valueEq) {
   if(valueEq) {
     return _.isEqual(newValue, oldValue);
