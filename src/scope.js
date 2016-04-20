@@ -17,6 +17,7 @@ function Scope() {
   this.$$children = [];
   this.$$phase = null;
   this.$root = this;
+  this.$$listeners = {};
 }
 
 Scope.prototype.$new = function(isolated, parent) {
@@ -37,6 +38,7 @@ Scope.prototype.$new = function(isolated, parent) {
   child.$$watchers = [];
   child.$$children = [];
   child.$parent = parent;
+  child.$$listeners = {};
   return child;
 };
 
@@ -373,4 +375,53 @@ Scope.prototype.$clearPhase = function() {
   this.$$phase = null;
 };
 
+Scope.prototype.$on = function (eventName, listener) {
+  var listeners = this.$$listeners[eventName] || (this.$$listeners[eventName] = []);
+  listeners.push(listener);
+  return function() {
+    var index = listeners.indexOf(listener);
+    if (index >= 0) {
+      listeners[index] = null;
+    }
+  }
+};
+
+Scope.prototype.$$fireEventOnScope = function (eventName, listenerArgs) {
+  var listeners = this.$$listeners[eventName] || [];
+  var i = 0;
+  while(i < listeners.length) {
+    if (listeners[i] === null) {
+      listeners.splice(i, 1);
+    } else {
+
+      listeners[i].apply(null, listenerArgs);
+      i++;
+    }
+  }
+}
+
+Scope.prototype.$emit = function(eventName) {
+  var event = { name: eventName, targetScope: this };
+  var additionalArgs = _.tail(arguments);
+  var listenerArgs = [event].concat(additionalArgs);
+  var scope = this;
+  do {
+    event.currentScope = scope;
+    scope.$$fireEventOnScope(eventName, listenerArgs);
+    scope = scope.$parent;
+  } while(scope)
+  return event;
+};
+
+Scope.prototype.$broadcast = function(eventName) {
+  var event = { name: eventName, targetScope: this };
+  var additionalArgs = _.tail(arguments);
+  var listenerArgs = [event].concat(additionalArgs);
+  this.$$everyScope(function(scope) {
+    event.currentScope = scope;
+    scope.$$fireEventOnScope(eventName, listenerArgs);
+    return true;
+  });
+  return event;
+};
 module.exports = Scope;

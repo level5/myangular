@@ -1647,5 +1647,225 @@ describe('Scope', function() {
       
     });
   });
+  
+  describe('Event', function () {
+    
+    var parent;
+    var scope;
+    var child;
+    var isolatedChild;
+    
+    beforeEach(function () {
+      parent = new Scope();
+      scope = parent.$new();
+      child = scope.$new();
+      
+      isolatedChild = scope.$new(true);
+    });
+    
+    it('allows registering listeners.', function () {
+      var listener1 = function() {};
+      var listener2 = function() {};
+      var listener3 = function() {};
+      
+      scope.$on('someEvent', listener1);
+      scope.$on('someEvent', listener2);
+      scope.$on('someOtherEvent', listener3);
+      
+      scope.$$listeners.should.eql({
+        someEvent: [listener1, listener2],
+        someOtherEvent: [listener3]
+      });
+    });
+    
+    it('registers different listeners for every scope.', function () {
+      var listener1 = function() {};
+      var listener2 = function() {};
+      var listener3 = function() {};
+      
+      scope.$on('someEvent', listener1);
+      child.$on('someEvent', listener2);
+      isolatedChild.$on('someOtherEvent', listener3);
+      
+      scope.$$listeners.should.eql({ someEvent: [listener1] });
+      child.$$listeners.should.eql({ someEvent: [listener2] });
+      isolatedChild.$$listeners.should.eql({ someOtherEvent: [listener3] });
+    });
+    
+    _.forEach(['$emit', '$broadcast'], function(method) {
+      
+      it('calls the listeners of the matching event on ' + method, function() {
+        var listener1 = sinon.spy();
+        var listener2 = sinon.spy();
+        
+        scope.$on('someEvent', listener1);
+        scope.$on('someOtherEvent', listener2);
+        
+        scope[method]('someEvent');
+        listener1.called.should.be.true();
+        listener2.called.should.be.false();
+        
+      });
+      
+      it('passes an event object with a name to listeners on ' + method, function() {
+        var listener = sinon.spy();
+        scope.$on('someEvent', listener);
+        
+        scope[method]('someEvent');
+        
+        listener.called.should.be.true();
+        listener.getCall(0).args[0].name.should.eql('someEvent');
+      });
+      
+      it('passes the same event object to each listener on ' + method, function() {
+        var listener1 = sinon.spy();
+        var listener2 = sinon.spy();
+        scope.$on('someEvent', listener1);
+        scope.$on('someEvent', listener2);
+        
+        scope[method]('someEvent');
+        
+        listener1.args[0][0].should.be.exactly(listener2.args[0][0]);
+      });
+      
+      it('passes additional arguments to listener on ' + method, function () {
+        var listener = sinon.spy();
+        scope.$on('someEvent', listener);
+        
+        scope[method]('someEvent', 'and', ['additional', 'arguments'], '...');
+        
+        listener.args[0][1].should.eql('and');
+        listener.args[0][2].should.eql(['additional', 'arguments']);
+        listener.args[0][3].should.eql('...');
+      });
+      
+      it('returns the event object on '  + method, function() {
+        var returnEvent = scope[method]('someEvent');
+        
+        returnEvent.should.not.be.undefined();
+        returnEvent.name.should.eql('someEvent');
+      });
+      
+      it('could be deregistered on ' + method, function() {
+        var listener = sinon.spy();
+        var deregistered = scope.$on('ss', listener);
+        deregistered();
+        scope[method]('ss');
+        
+        listener.called.should.be.false();
+      });
+      
+      it('does not skip the next listener when removed on ' + method, function() {
+        var deregistered;
+        
+        var listener = function() {
+          deregistered();
+        }
+        var nextListener = sinon.spy();
+        
+        deregistered = scope.$on('someEvent', listener);
+        scope.$on('someEvent', nextListener);
+        
+        scope[method]('someEvent');
+        
+        nextListener.called.should.be.true();
+        
+      });
+      
+    });
+      
+    it('propagates up the scope hierarchy on $emit', function () {
+      var parentListener = sinon.spy();
+      var scopeListener = sinon.spy();
+      
+      parent.$on('someEvent', parentListener);
+      scope.$on('someEvent', scopeListener);
+      
+      scope.$emit('someEvent');
+      
+      parentListener.called.should.be.true();
+      scopeListener.called.should.be.true();
+    });
+    
+    it('propagates down the scope hierarchy on $boradcast', function() {
+      var scopeListener = sinon.spy();
+      var childListener = sinon.spy();
+      var isolatedChildListener = sinon.spy();
+      
+      scope.$on('someEvent', scopeListener);
+      child.$on('someEvent', childListener);
+      isolatedChild.$on('someEvent', isolatedChildListener);
+      
+      scope.$broadcast('someEvent');
+      
+      scopeListener.called.should.be.true();
+      childListener.called.should.be.true();
+      isolatedChildListener.called.should.be.true();
+      
+    });
+    
+    it('attaches targetScope on $emit.', function () {
+      var scopeListener = sinon.spy();
+      var parentListener = sinon.spy();
+      
+      scope.$on('someEvent', parentListener);
+      scope.$on('someEvent', scopeListener);
+      
+      scope.$emit('someEvent');
+      
+      parentListener.args[0][0].targetScope.should.equal(scope);
+      scopeListener.args[0][0].targetScope.should.equal(scope);
+    });
+     
+    it('attaches targetScope on $broadcast.', function () {
+      var scopeListener = sinon.spy();
+      var parentListener = sinon.spy();
+      
+      scope.$on('someEvent', parentListener);
+      scope.$on('someEvent', scopeListener);
+      
+      scope.$broadcast('someEvent');
+      
+      parentListener.args[0][0].targetScope.should.equal(scope);
+      scopeListener.args[0][0].targetScope.should.equal(scope);
+    });
+
+    
+    it('attaches currentScope on $emit.', function () {
+      var currentScopeOnScope, currentScopeOnParent;
+      var scopeListener = function (event) {
+        currentScopeOnScope = event.currentScope;
+      };
+      var parentListener = function (event) {
+        currentScopeOnParent = event.currentScope;
+      };
+      
+      parent.$on('someEvent', parentListener);
+      scope.$on('someEvent', scopeListener);
+      
+      scope.$emit('someEvent');
+      
+      currentScopeOnScope.should.be.exactly(scope);
+      currentScopeOnParent.should.be.exactly(parent);
+    });
+     
+    it('attaches currentScope on $broadcast.', function () {
+      var currentScopeOnScope, currentScopeOnChild;
+      var scopeListener = function (event) {
+        currentScopeOnScope = event.currentScope;
+      };
+      var childListener = function (event) {
+        currentScopeOnChild = event.currentScope;
+      };
+      
+      scope.$on('someEvent', scopeListener);
+      child.$on('someEvent', childListener);
+      
+      scope.$broadcast('someEvent');
+      
+      currentScopeOnScope.should.be.exactly(scope);
+      currentScopeOnChild.should.be.exactly(child);
+    });       
+  });
 
 });
