@@ -1772,6 +1772,30 @@ describe('Scope', function() {
         
       });
       
+      it('is sets defaultPrevented when preventDefault called on ' + method, function () {
+        var listener = function (event) {
+          event.preventDefault();
+        };
+        scope.$on('someEvent', listener);
+        var event = scope[method]('someEvent');
+        
+        event.defaultPrevented.should.be.true();
+      });
+      
+      it('does not stop on exceptions on ' + method, function() {
+        var listener1 = function(event) {
+          throw 'listener1 throwing an exception';
+        };
+        var listener2 = sinon.spy();
+        
+        scope.$on('someEvent', listener1);
+        scope.$on('someEvent', listener2);
+        
+        scope[method]('someEvent');
+        
+        listener2.called.should.be.true();
+      });
+      
     });
       
     it('propagates up the scope hierarchy on $emit', function () {
@@ -1865,7 +1889,94 @@ describe('Scope', function() {
       
       currentScopeOnScope.should.be.exactly(scope);
       currentScopeOnChild.should.be.exactly(child);
-    });       
+    });  
+    
+    it('sets currentScope to null after progagation on $emit.', function () {
+      var event;
+      var scopeListener = function(evt) {
+        event = evt;
+      };
+      
+      scope.$on('someEvent', scopeListener);
+      
+      scope.$emit('someEvent');
+      
+      should(event.currentScope).be.null();
+    });
+    
+    it('sets currentScope to null after propagation on $broadcast.', function () {
+      var event;
+      var scopeListener = function(evt) {
+        event = evt;
+      };
+      
+      scope.$on('someEvent', scopeListener);
+      
+      scope.$broadcast('someEvent');
+      
+      should(event.currentScope).be.null();
+    });
+    
+    it('does not progagate to parent when stopped.', function () {
+      var scopeListener = function(event) {
+        event.stopPropagation(); 
+      };
+      var parentListener = sinon.spy();
+      
+      scope.$on('someEvent', scopeListener);
+      parent.$on('someEvent', parentListener);
+      
+      scope.$emit('someEvent');
+      
+      parentListener.called.should.be.false();
+    });
+    
+    it('is received by listeners on current scope after being stopped.', function() {
+      var listener1 = function(event) {
+        event.stopPropagation(); 
+      };
+      var listener2 = sinon.spy();
+      
+      scope.$on('someEvent', listener1);
+      scope.$on('someEvent', listener2);
+      
+      scope.$emit('someEvent');
+      
+      listener2.called.should.be.true();
+    });
+    
+    it('fires $destroy when destroyed.', function () {
+      var listener = sinon.spy();
+      scope.$on('$destroy', listener);
+      
+      scope.$destroy();
+      
+      listener.called.should.be.true();
+    });
+    
+    it('fires $destroy on children destroyed.', function() {
+      var listener = sinon.spy();
+      
+      child.$on('$destroy', listener);
+      
+      scope.$destroy();
+      
+      listener.called.should.be.true();
+    });
+    
+    it('no longers calls listeners after destroyed.', function() {
+      var listener = sinon.spy();
+      scope.$on('myEvent', listener);
+      
+      scope.$destroy();
+      
+      scope.$emit('myEvent');
+      
+      listener.called.should.be.false();
+    });
+    
+    
+         
   });
 
 });
