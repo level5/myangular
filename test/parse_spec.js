@@ -74,4 +74,9 @@ describe('parse', function() {
     var fn = parse('"a\\\"b"');
     fn().should.equal('a\"b');    
   });
+  
+  it('will parse a string with unicode escape.', function() {
+    var fn = parse('"\\u00A0"');
+    fn().should.equal('\u00A0');
+  });
 });
