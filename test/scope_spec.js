@@ -857,7 +857,7 @@ describe('Scope', function() {
       scope.$digest();
 
       counter.should.eql(0);
-    })
+    });
   });
 
   describe('inheritance', function() {
@@ -1265,32 +1265,32 @@ describe('Scope', function() {
       scope.$digest();
       scope.counter.should.eql(1);
     });
-    
+
     it('notices when the value becomes an array', function() {
       scope.counter = 0;
-      
+
       scope.$watchCollection(
         function (scope) { return scope.arr; },
         function (newValue, oldValue, scope) {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       scope.arr = [1, 2, 3];
       scope.$digest();
       scope.counter.should.eql(2);
-      
+
       scope.$digest();
       scope.counter.should.eql(2);
     });
-    
+
     it("notices an item added to an array.", function() {
       scope.arr = [1, 2, 3];
       scope.counter = 0;
-      
+
       scope.$watchCollection(
         function (scope) {
           return scope.arr;
@@ -1299,22 +1299,22 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       scope.arr.push(4);
       scope.$digest();
       scope.counter.should.eql(2);
-      
+
       scope.$digest();
       scope.counter.should.eql(2);
     });
-    
+
     it('notices an item removed from an array.', function () {
       scope.arr = [1, 2, 3];
       scope.counter = 0;
-      
+
       scope.$watchCollection(
         function (scope) {
           return scope.arr;
@@ -1323,22 +1323,22 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       scope.arr.shift();
       scope.$digest();
       scope.counter.should.eql(2);
-      
+
       scope.$digest();
       scope.counter.should.eql(2);
     });
-    
+
     it('notices an item replaced in an array.', function () {
       scope.arr = [1, 2, 3];
       scope.counter = 0;
-      
+
       scope.$watchCollection(
         function (scope) {
           return scope.arr;
@@ -1347,22 +1347,22 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       scope.arr[1] = 42;
       scope.$digest();
       scope.counter.should.eql(2);
-      
+
       scope.$digest();
       scope.counter.should.eql(2);
     });
-        
+
     it('notices items reordered in an array.', function () {
       scope.arr = [2, 1, 3];
       scope.counter = 0;
-      
+
       scope.$watchCollection(
         function (scope) {
           return scope.arr;
@@ -1371,22 +1371,22 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       scope.arr.sort();
       scope.$digest();
       scope.counter.should.eql(2);
-      
+
       scope.$digest();
       scope.counter.should.eql(2);
     });
-    
+
     it('does not fail on NaNs in arrays.', function () {
       scope.arr = [2, NaN, 3];
       scope.counter = 0;
-      
+
       scope.$watchCollection(
         function (scope) {
           return scope.arr;
@@ -1395,44 +1395,18 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
     });
-    
+
     it('notices an item replaced in an arguments object.', function () {
       (function () {
         scope.arrayLike = arguments;
       })(1, 2, 3);
-      scope.counter = 0;
-      
-      scope.$watchCollection(
-        function (scope) {
-          return scope.arrayLike;
-        },
-        function (newValue, oldValue, scope) {
-          scope.counter++;
-        }
-      );
-      
-      scope.$digest();
-      scope.counter.should.eql(1);
-      
-      scope.arrayLike[1] = 42;
-      scope.$digest();
-      scope.counter.should.eql(2);
-      
-      scope.$digest();
-      scope.counter.should.eql(2);     
-    });
-    
-    it('notices an item replaced in a  NodeList object.', function() {
-      document.documentElement.appendChild(document.createElement('div'));
-      scope.arrayLike = document.getElementsByTagName('div');
-      
       scope.counter = 0;
 
       scope.$watchCollection(
@@ -1443,18 +1417,44 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
+      scope.arrayLike[1] = 42;
+      scope.$digest();
+      scope.counter.should.eql(2);
+
+      scope.$digest();
+      scope.counter.should.eql(2);
+    });
+
+    it('notices an item replaced in a  NodeList object.', function() {
+      document.documentElement.appendChild(document.createElement('div'));
+      scope.arrayLike = document.getElementsByTagName('div');
+
+      scope.counter = 0;
+
+      scope.$watchCollection(
+        function (scope) {
+          return scope.arrayLike;
+        },
+        function (newValue, oldValue, scope) {
+          scope.counter++;
+        }
+      );
+
+      scope.$digest();
+      scope.counter.should.eql(1);
+
       document.documentElement.appendChild(document.createElement('div'));
       scope.$digest();
       scope.counter.should.eql(2);
-      
+
       scope.$digest();
-      scope.counter.should.eql(2);      
+      scope.counter.should.eql(2);
     });
-    
+
     it('notices when value becomes an object.', function() {
       scope.counter = 0;
       scope.$watchCollection(
@@ -1465,22 +1465,22 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       scope.obj = {a: 1};
       scope.$digest();
       scope.counter.should.eql(2);
-      
+
       scope.$digest();
       scope.counter.should.eql(2);
     });
-    
+
     it('notices when an attribute is added to an object.', function() {
       scope.counter = 0;
       scope.obj = {a: 1};
-      
+
       scope.$watchCollection(
         function (scope) {
           return scope.obj;
@@ -1489,22 +1489,22 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       scope.obj.b = 2;
       scope.$digest();
       scope.counter.should.eql(2);
-      
+
       scope.$digest();
-      scope.counter.should.eql(2);      
+      scope.counter.should.eql(2);
     });
-    
+
     it('notices when an attribute is changed in an object.', function() {
       scope.counter = 0;
       scope.obj = {a: 1};
-      
+
       scope.$watchCollection(
         function (scope) {
           return scope.obj;
@@ -1513,22 +1513,22 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       scope.obj.a = 2;
       scope.$digest();
       scope.counter.should.eql(2);
-      
+
       scope.$digest();
-      scope.counter.should.eql(2);      
-    });    
-     
+      scope.counter.should.eql(2);
+    });
+
     it('does not fail on NaN attributes in objects.', function() {
       scope.counter = 0;
       scope.obj = {a: NaN};
-      
+
       scope.$watchCollection(
         function (scope) {
           return scope.obj;
@@ -1537,18 +1537,18 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       scope.$digest();
-      scope.counter.should.eql(1);      
-    });     
-    
+      scope.counter.should.eql(1);
+    });
+
     it('notices when an attribute is removed from an object.', function() {
       scope.counter = 0;
       scope.obj = {a: 1};
-      
+
       scope.$watchCollection(
         function (scope) {
           return scope.obj;
@@ -1557,304 +1557,304 @@ describe('Scope', function() {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.counter.should.eql(1);
-      
+
       delete scope.obj.a;
       scope.$digest();
       scope.counter.should.eql(2);
-      
+
       scope.$digest();
-      scope.counter.should.eql(2);      
-    });  
-    
+      scope.counter.should.eql(2);
+    });
+
     it('does not consider any object with a length property an array.', function() {
       scope.obj = {length: 42, otherKey: 'abc'};
       scope.counter = 0;
-      
+
       scope.$watchCollection(
         function(scope) {return scope.obj;},
         function(newValue, oldValue, scope) {
           scope.counter++;
         }
       );
-      
+
       scope.$digest();
       scope.obj.newKey = 'def';
       scope.$digest();
-      
+
       scope.counter.should.eql(2);
-    }); 
-    
+    });
+
     it('gives the old non-collection value to listeners.', function() {
       scope.aValue = 42;
       var oldValueGiven;
-      
+
       scope.$watchCollection(
         function(scope) {return scope.aValue;},
         function(newValue, oldValue, scope) {
           oldValueGiven = oldValue;
         }
       );
-      
+
       scope.$digest();
-      
+
       scope.aValue = 43;
       scope.$digest();
-      
+
       oldValueGiven.should.eql(42);
-      
+
     });
-  
+
     it('gives the old array value to listeners.', function() {
       scope.aValue = [1, 2, 3];
       var oldValueGiven;
-      
+
       scope.$watchCollection(
         function(scope) {return scope.aValue;},
         function(newValue, oldValue, scope) {
           oldValueGiven = oldValue;
         }
       );
-      
+
       scope.$digest();
-      
+
       scope.aValue.push(4);
       scope.$digest();
-      
+
       oldValueGiven.should.eql([1, 2, 3]);
-      
+
     });
-  
+
     it('gives the old object value to listeners.', function() {
       scope.aValue = {a: 1, b: 2};
       var oldValueGiven;
-      
+
       scope.$watchCollection(
         function(scope) {return scope.aValue;},
         function(newValue, oldValue, scope) {
           oldValueGiven = oldValue;
         }
       );
-      
+
       scope.$digest();
-      
+
       scope.aValue.c = 3;
       scope.$digest();
-      
+
       oldValueGiven.should.eql({a: 1, b: 2});
-      
+
     });
   });
-  
+
   describe('Event', function () {
-    
+
     var parent;
     var scope;
     var child;
     var isolatedChild;
-    
+
     beforeEach(function () {
       parent = new Scope();
       scope = parent.$new();
       child = scope.$new();
-      
+
       isolatedChild = scope.$new(true);
     });
-    
+
     it('allows registering listeners.', function () {
       var listener1 = function() {};
       var listener2 = function() {};
       var listener3 = function() {};
-      
+
       scope.$on('someEvent', listener1);
       scope.$on('someEvent', listener2);
       scope.$on('someOtherEvent', listener3);
-      
+
       scope.$$listeners.should.eql({
         someEvent: [listener1, listener2],
         someOtherEvent: [listener3]
       });
     });
-    
+
     it('registers different listeners for every scope.', function () {
       var listener1 = function() {};
       var listener2 = function() {};
       var listener3 = function() {};
-      
+
       scope.$on('someEvent', listener1);
       child.$on('someEvent', listener2);
       isolatedChild.$on('someOtherEvent', listener3);
-      
+
       scope.$$listeners.should.eql({ someEvent: [listener1] });
       child.$$listeners.should.eql({ someEvent: [listener2] });
       isolatedChild.$$listeners.should.eql({ someOtherEvent: [listener3] });
     });
-    
+
     _.forEach(['$emit', '$broadcast'], function(method) {
-      
+
       it('calls the listeners of the matching event on ' + method, function() {
         var listener1 = sinon.spy();
         var listener2 = sinon.spy();
-        
+
         scope.$on('someEvent', listener1);
         scope.$on('someOtherEvent', listener2);
-        
+
         scope[method]('someEvent');
         listener1.called.should.be.true();
         listener2.called.should.be.false();
-        
+
       });
-      
+
       it('passes an event object with a name to listeners on ' + method, function() {
         var listener = sinon.spy();
         scope.$on('someEvent', listener);
-        
+
         scope[method]('someEvent');
-        
+
         listener.called.should.be.true();
         listener.getCall(0).args[0].name.should.eql('someEvent');
       });
-      
+
       it('passes the same event object to each listener on ' + method, function() {
         var listener1 = sinon.spy();
         var listener2 = sinon.spy();
         scope.$on('someEvent', listener1);
         scope.$on('someEvent', listener2);
-        
+
         scope[method]('someEvent');
-        
+
         listener1.args[0][0].should.be.exactly(listener2.args[0][0]);
       });
-      
+
       it('passes additional arguments to listener on ' + method, function () {
         var listener = sinon.spy();
         scope.$on('someEvent', listener);
-        
+
         scope[method]('someEvent', 'and', ['additional', 'arguments'], '...');
-        
+
         listener.args[0][1].should.eql('and');
         listener.args[0][2].should.eql(['additional', 'arguments']);
         listener.args[0][3].should.eql('...');
       });
-      
+
       it('returns the event object on '  + method, function() {
         var returnEvent = scope[method]('someEvent');
-        
+
         returnEvent.should.not.be.undefined();
         returnEvent.name.should.eql('someEvent');
       });
-      
+
       it('could be deregistered on ' + method, function() {
         var listener = sinon.spy();
         var deregistered = scope.$on('ss', listener);
         deregistered();
         scope[method]('ss');
-        
+
         listener.called.should.be.false();
       });
-      
+
       it('does not skip the next listener when removed on ' + method, function() {
         var deregistered;
-        
+
         var listener = function() {
           deregistered();
         }
         var nextListener = sinon.spy();
-        
+
         deregistered = scope.$on('someEvent', listener);
         scope.$on('someEvent', nextListener);
-        
+
         scope[method]('someEvent');
-        
+
         nextListener.called.should.be.true();
-        
+
       });
-      
+
       it('is sets defaultPrevented when preventDefault called on ' + method, function () {
         var listener = function (event) {
           event.preventDefault();
         };
         scope.$on('someEvent', listener);
         var event = scope[method]('someEvent');
-        
+
         event.defaultPrevented.should.be.true();
       });
-      
+
       it('does not stop on exceptions on ' + method, function() {
         var listener1 = function(event) {
           throw 'listener1 throwing an exception';
         };
         var listener2 = sinon.spy();
-        
+
         scope.$on('someEvent', listener1);
         scope.$on('someEvent', listener2);
-        
+
         scope[method]('someEvent');
-        
+
         listener2.called.should.be.true();
       });
-      
+
     });
-      
+
     it('propagates up the scope hierarchy on $emit', function () {
       var parentListener = sinon.spy();
       var scopeListener = sinon.spy();
-      
+
       parent.$on('someEvent', parentListener);
       scope.$on('someEvent', scopeListener);
-      
+
       scope.$emit('someEvent');
-      
+
       parentListener.called.should.be.true();
       scopeListener.called.should.be.true();
     });
-    
+
     it('propagates down the scope hierarchy on $boradcast', function() {
       var scopeListener = sinon.spy();
       var childListener = sinon.spy();
       var isolatedChildListener = sinon.spy();
-      
+
       scope.$on('someEvent', scopeListener);
       child.$on('someEvent', childListener);
       isolatedChild.$on('someEvent', isolatedChildListener);
-      
+
       scope.$broadcast('someEvent');
-      
+
       scopeListener.called.should.be.true();
       childListener.called.should.be.true();
       isolatedChildListener.called.should.be.true();
-      
+
     });
-    
+
     it('attaches targetScope on $emit.', function () {
       var scopeListener = sinon.spy();
       var parentListener = sinon.spy();
-      
+
       scope.$on('someEvent', parentListener);
       scope.$on('someEvent', scopeListener);
-      
+
       scope.$emit('someEvent');
-      
-      parentListener.args[0][0].targetScope.should.equal(scope);
-      scopeListener.args[0][0].targetScope.should.equal(scope);
-    });
-     
-    it('attaches targetScope on $broadcast.', function () {
-      var scopeListener = sinon.spy();
-      var parentListener = sinon.spy();
-      
-      scope.$on('someEvent', parentListener);
-      scope.$on('someEvent', scopeListener);
-      
-      scope.$broadcast('someEvent');
-      
+
       parentListener.args[0][0].targetScope.should.equal(scope);
       scopeListener.args[0][0].targetScope.should.equal(scope);
     });
 
-    
+    it('attaches targetScope on $broadcast.', function () {
+      var scopeListener = sinon.spy();
+      var parentListener = sinon.spy();
+
+      scope.$on('someEvent', parentListener);
+      scope.$on('someEvent', scopeListener);
+
+      scope.$broadcast('someEvent');
+
+      parentListener.args[0][0].targetScope.should.equal(scope);
+      scopeListener.args[0][0].targetScope.should.equal(scope);
+    });
+
+
     it('attaches currentScope on $emit.', function () {
       var currentScopeOnScope, currentScopeOnParent;
       var scopeListener = function (event) {
@@ -1863,16 +1863,16 @@ describe('Scope', function() {
       var parentListener = function (event) {
         currentScopeOnParent = event.currentScope;
       };
-      
+
       parent.$on('someEvent', parentListener);
       scope.$on('someEvent', scopeListener);
-      
+
       scope.$emit('someEvent');
-      
+
       currentScopeOnScope.should.be.exactly(scope);
       currentScopeOnParent.should.be.exactly(parent);
     });
-     
+
     it('attaches currentScope on $broadcast.', function () {
       var currentScopeOnScope, currentScopeOnChild;
       var scopeListener = function (event) {
@@ -1881,102 +1881,102 @@ describe('Scope', function() {
       var childListener = function (event) {
         currentScopeOnChild = event.currentScope;
       };
-      
+
       scope.$on('someEvent', scopeListener);
       child.$on('someEvent', childListener);
-      
+
       scope.$broadcast('someEvent');
-      
+
       currentScopeOnScope.should.be.exactly(scope);
       currentScopeOnChild.should.be.exactly(child);
-    });  
-    
+    });
+
     it('sets currentScope to null after progagation on $emit.', function () {
       var event;
       var scopeListener = function(evt) {
         event = evt;
       };
-      
+
       scope.$on('someEvent', scopeListener);
-      
+
       scope.$emit('someEvent');
-      
+
       should(event.currentScope).be.null();
     });
-    
+
     it('sets currentScope to null after propagation on $broadcast.', function () {
       var event;
       var scopeListener = function(evt) {
         event = evt;
       };
-      
+
       scope.$on('someEvent', scopeListener);
-      
+
       scope.$broadcast('someEvent');
-      
+
       should(event.currentScope).be.null();
     });
-    
+
     it('does not progagate to parent when stopped.', function () {
       var scopeListener = function(event) {
-        event.stopPropagation(); 
+        event.stopPropagation();
       };
       var parentListener = sinon.spy();
-      
+
       scope.$on('someEvent', scopeListener);
       parent.$on('someEvent', parentListener);
-      
+
       scope.$emit('someEvent');
-      
+
       parentListener.called.should.be.false();
     });
-    
+
     it('is received by listeners on current scope after being stopped.', function() {
       var listener1 = function(event) {
-        event.stopPropagation(); 
+        event.stopPropagation();
       };
       var listener2 = sinon.spy();
-      
+
       scope.$on('someEvent', listener1);
       scope.$on('someEvent', listener2);
-      
+
       scope.$emit('someEvent');
-      
+
       listener2.called.should.be.true();
     });
-    
+
     it('fires $destroy when destroyed.', function () {
       var listener = sinon.spy();
       scope.$on('$destroy', listener);
-      
+
       scope.$destroy();
-      
+
       listener.called.should.be.true();
     });
-    
+
     it('fires $destroy on children destroyed.', function() {
       var listener = sinon.spy();
-      
+
       child.$on('$destroy', listener);
-      
+
       scope.$destroy();
-      
+
       listener.called.should.be.true();
     });
-    
+
     it('no longers calls listeners after destroyed.', function() {
       var listener = sinon.spy();
       scope.$on('myEvent', listener);
-      
+
       scope.$destroy();
-      
+
       scope.$emit('myEvent');
-      
+
       listener.called.should.be.false();
     });
-    
-    
-         
+
+
+
   });
 
 });
