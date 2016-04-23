@@ -53,6 +53,7 @@ describe('parse', function() {
 
   it('can parse a string in single quotes.', function() {
     var fn = parse("'abc'");
+    console.log('fn:', fn.toString());
     fn().should.equal('abc');
   });
 
@@ -60,23 +61,78 @@ describe('parse', function() {
     var fn = parse('"abc"');
     fn().should.equal('abc');
   });
-  
+
   it('will not parse a string with mismacthing quotes.', function() {
     (function() { parse('"abc\''); }).should.throw();
   });
-  
+
   it('can parse a string with single quote inside.', function () {
     var fn = parse("'a\\\'b'");
     fn().should.equal('a\'b');
   });
-  
+
   it('can parse a string with double quotes inside.', function() {
     var fn = parse('"a\\\"b"');
-    fn().should.equal('a\"b');    
+    fn().should.equal('a\"b');
   });
-  
+
   it('will parse a string with unicode escape.', function() {
     var fn = parse('"\\u00A0"');
     fn().should.equal('\u00A0');
   });
+
+  it('will not parse a string with invalid unicode escapes.', function() {
+    (function() { parse('\\u00T0'); }).should.throw();
+  });
+
+  it('will parse null.', function() {
+    var fn = parse('null');
+    should(fn()).be.null();
+  });
+
+  it('will parse true.', function () {
+    var fn = parse('true');
+    fn().should.be.true();
+  });
+  
+  it('will parse false.', function () {
+    var fn = parse('false');
+    fn().should.be.false();
+  });
+  
+  it('ignores whitespace.', function() {
+    var fn = parse('\n42 ');
+    fn().should.equal(42);
+  });
+  
+  it('will parse an empty array.', function() {
+    var fn = parse('[]');
+    fn().should.eql([]);
+  });
+  
+  it('will parse a non-empty array.', function() {
+    var fn = parse('[1, "two", [3], true]');
+    fn().should.eql([1, "two", [3], true]);
+  });
+  
+  it('will parse an array with trailing commas.', function () {
+    var fn = parse('[1, 2, 3, ]');
+    fn().should.eql([1, 2, 3]);
+  });
+  
+  it('will parse an empty object.', function() {
+    var fn = parse('{}');
+    fn().should.eql({});
+  });
+  
+  it('will parse a non-empty object.', function() {
+    var fn = parse('{"a key": 1, "another-key": 2}');
+    fn().should.eql({"a key": 1, "another-key": 2});
+  });
+  
+  it('will parse an object with identifier keys.', function() {
+    var fn = parse('{a: 1, b: [2, 3], c: {d: 4}}');
+    fn().should.eql({a: 1, b: [2, 3], c: {d: 4}});
+  });
+
 });
