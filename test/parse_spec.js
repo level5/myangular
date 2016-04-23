@@ -134,5 +134,35 @@ describe('parse', function() {
     var fn = parse('{a: 1, b: [2, 3], c: {d: 4}}');
     fn().should.eql({a: 1, b: [2, 3], c: {d: 4}});
   });
+  
+  it('looks up an attribute from the scope.', function() {
+    var fn = parse('aKey');
+    fn({aKey: 42}).should.eql(42);
+    should(fn({})).be.undefined();
+  });
+  
+  it('returns undefined when looking up attribute from undefined', function() {
+    var fn = parse('aKey');
+    should(fn()).be.undefined();
+  });
+  
+  it('will parse this.', function () {
+    var fn = parse('this');
+    var scope = {};
+    fn(scope).should.be.exactly(scope);
+    should(fn()).be.undefined();
+  });
+  
+  it('looks up a 2-part identifier path from the scope.', function() {
+    var fn = parse('aKey.anotherKey');
+    should(fn({aKey: {anotherKey: 42}})).eql(42);
+    should(fn({aKey: {}})).be.undefined();
+    should(fn({})).be.undefined();
+  });
+  
+  it('looks up a member from an object.', function() {
+    var fn = parse('{aKey: 42}.aKey');
+    fn().should.eql(42);
+  });
 
 });
