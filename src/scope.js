@@ -304,7 +304,7 @@ Scope.prototype.$digest = function() {
 };
 
 Scope.prototype.$eval = function(expr, locals) {
-  return expr(this, locals);
+  return expr(this, locals); /* 这里会和parse呼应 */
 };
 
 Scope.prototype.$$postDigest = function(fn) {

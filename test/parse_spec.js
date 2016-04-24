@@ -164,5 +164,137 @@ describe('parse', function() {
     var fn = parse('{aKey: 42}.aKey');
     fn().should.eql(42);
   });
+  
+  it('looks up a 4-part identifier path from the scope.', function () {
+    var fn = parse('aKey.secondKey.thirdKey.fourthKey');
+    should(fn({aKey: {secondKey: {thirdKey: {fourthKey: 42}}}})).eql(42);
+    should(fn({aKey: {secondKey: {thirdKey: {}}}})).be.undefined();
+    should(fn({aKey: {}})).be.undefined();
+    should(fn()).be.undefined();
+  });
+  
+  it('uses local instead of scope when there is a matching key.', function() {
+    var fn = parse('aKey');
+    var scope = {aKey: 42};
+    var locals = {aKey: 43};
+    
+    fn(scope, locals).should.eql(43);
+  });
+  
+  it('does not use locals instead of scope when no matching key.', function() {
+    var fn = parse('aKey');
+    var scope = {aKey: 42};
+    var locals = {otherKey: 43};
+    
+    fn(scope, locals).should.eql(42);
+  });
+  
+  it('uses locals instead of scope when the first part matches.', function() {
+    var fn = parse('aKey.anotherKey');
+    var scope = {akey: {anotherKey: 42}};
+    var locals = {akey: {}};
+    
+    should(fn(scope, locals)).be.undefined();
+  });
+  
+  it('parses a simple computed property access.', function() {
+    var fn = parse('aKey["anotherKey"]');
+    fn({aKey: {anotherKey: 42}}).should.eql(42);
+  });
+  
+  it('parses a computed numeric array access.', function() {
+    var fn = parse('anArray[1]');
+    fn({anArray: [1,2,3]}).should.eql(2);
+  });
+  
+  it('parses a computed access with another key as property.', function() {
+    var fn = parse('lock[key]');
+    fn({key: 'theKey', lock: {theKey: 42}}).should.eql(42);
+  });
+  
+  it('parses computed access with another access as property.', function() {
+    var fn = parse('lock[keys["aKey"]]');
+    fn({keys: {aKey: 'theKey'}, lock: {theKey: 42}}).should.eql(42);
+  });
+  
+  it('parses a function call.', function() {
+    var fn = parse('aFunction()');
+    fn({aFunction: function() {return 42}}).should.eql(42);
+  });
+  
+  it('parses a function call with a single number argument.', function() {
+    var fn = parse('aFunction(42)');
+    fn({aFunction: function(n) {return n;}}).should.eql(42);
+  });
+  
+  it('parses a function call with a single identifier argument.', function() {
+    var fn = parse('aFunction(n)');
+    fn({n: 42, aFunction: function(n) {return n;}}).should.eql(42);
+  });
+  
+  it('parses a function call with a single function call arugment.', function() {
+    var fn = parse('aFunction(argFn())');
+    fn({
+      argFn: _.constant(42),
+      aFunction: function (arg) {return arg; }
+    }).should.eql(42);
+  });
+  
+  it('parses a function call with multiple arguments.', function() {
+    var fn = parse('aFunction(37, n, argFn())');
+    fn({
+      n: 3,
+      argFn: _.constant(2),
+      aFunction: function (a1, a2, a3) { return a1 + a2 + a3; }
+    }).should.eql(42);
+  });
+  
+  it('calls methods accessed as computed properties.', function () {
+    var scope = {
+      anObject: {
+        aMember: 42,
+        aFunction: function() {
+          return this.aMember;
+        }
+      }
+    };
+    var fn = parse('anObject["aFunction"]()');
+    fn(scope).should.eql(42);
+  });
+  
+  it('calls method access as non-computed properties.', function() {
+    var scope = {
+      anObject: {
+        aMember: 42,
+        aFunction: function() {
+          return this.aMember;
+        }
+      }
+    };
+    var fn = parse('anObject.aFunction()');
+    fn(scope).should.eql(42);    
+  });
+  
+  it('binds bare functions to the scope.', function() {
+    var scope = {
+      aFunction: function() {
+        return this;
+      }
+    };
+    
+    var fn = parse('aFunction()');
+    fn(scope).should.be.exactly(scope);
+  });
+  
+  it('binds bare functions on locals to the locals.', function() {
+    var scope = {};
+    var locals = {
+      aFunction: function() {
+        return this;
+      }
+    }
+    var fn = parse('aFunction()');
+    fn(scope, locals).should.be.exactly(locals);
+  });
 
 });
