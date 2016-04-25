@@ -296,5 +296,39 @@ describe('parse', function() {
     var fn = parse('aFunction()');
     fn(scope, locals).should.be.exactly(locals);
   });
+  
+  it('parses a simple attribute assignment.', function() {
+    var fn = parse('anAttribute = 42');
+    var scope = {};
+    fn(scope);
+    scope.anAttribute.should.eql(42);
+  });
+  
+  it('can assign any primary expression.', function() {
+    var fn = parse('anAttribute = aFunction()');
+    var scope = {aFunction: _.constant(42)};
+    fn(scope);
+    scope.anAttribute.should.eql(42);
+  });
+  
+  it('can assign a computed object property.', function() {
+    var fn = parse('anObject["anAttribute"] = 42');
+    var scope = {anObject: {}};
+    fn(scope);
+    scope.anObject.anAttribute.should.eql(42);
+  });
 
+  it('can assign a nested object property.', function() {
+    var fn = parse('anArray[0].anAttribute = 42');
+    var scope = {anArray: [{}]};
+    fn(scope);
+    scope.anArray[0].anAttribute.should.eql(42);
+  });
+  
+  it('creates the objects in the assignment path that do not exist.', function() {
+    var fn = parse('some["nested"].property.path = 42');
+    var scope = {};
+    fn(scope);
+    scope.some.nested.property.path.should.eql(42);
+  });
 });
