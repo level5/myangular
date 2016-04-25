@@ -126,7 +126,7 @@ Lexer.prototype.readNumber = function() {
 var ESCAPES = {
   'n': '\n', 'f': '\f', 'r': '\r', 't': '\t',
   'v': '\v', '\'': '\'', '"': '"'
-}
+};
 
 Lexer.prototype.readString = function(quote) {
   this.index++;
@@ -195,7 +195,7 @@ Lexer.prototype.readIdent = function () {
 Lexer.prototype.isWhitespace = function(ch) {
   return ch === ' ' || ch === '\r' || ch === '\t' ||
     ch === '\n' || ch === '\v' || ch == '\u00A0'; /* 这一个是什么？ */
-}
+};
 
 // =================================================================================
 //                            AST
@@ -213,7 +213,7 @@ AST.Property = 'Property';
 AST.Identifier = 'Identifier';
 AST.ThisExpression = 'ThisExpression';
 AST.MemberExpression = 'MemberExpression';
-AST.CallExpression = 'CallExpression'
+AST.CallExpression = 'CallExpression';
 AST.AssignmentExpression = 'AssignmentExpression';
 
 AST.prototype.constants = {
@@ -246,7 +246,7 @@ AST.prototype.primary = function () {
     primary = this.constant();
   }
   var next;
-  while (next = this.expect('.', '[', '(')) {
+  while ((next = this.expect('.', '[', '('))) {
     if (next.text === '[') {
       primary = {
         type: AST.MemberExpression,
@@ -307,7 +307,7 @@ AST.prototype.peek = function (e1, e2, e3, e4) {
      return this.tokens[0];
    }
  } 
-}
+};
 
 AST.prototype.arrayDeclaration = function () {
   var elements = [];
@@ -337,7 +337,7 @@ AST.prototype.object = function() {
   }
   this.consume('}');
   return {type: AST.ObjectExpression, properties: properties};
-}
+};
 
 AST.prototype.consume = function (e) {
   var token = this.expect(e);
@@ -368,13 +368,16 @@ ASTCompiler.prototype.compile = function(text) {
   var ast = this.astBuilder.ast(text);
   this.state = {body: [], nextId: 0, vars:[]};
   this.recurse(ast);
-
-  /* jshint -W054 */
-  return new Function('s', 'l',
+  
+  var fnString = 'var fn=function(s,l){' + 
     (
       this.state.vars.length? 'var ' + this.state.vars.join(',') + ';' : ''
-    ) + this.state.body.join(''));
-  /* jshint +W054 */
+    ) + this.state.body.join('') + '}; return fn;';
+    console.log('@@@@@', fnString);
+  /* jshint -W054 */
+  return new Function('ensureSafeMemberName', 'ensureSafeObject', 
+    fnString)(ensureSafeMemberName, ensureSafeObject);
+  /* jshint +W054 */  
 };
 
 ASTCompiler.prototype.recurse = function(ast, context, create) {
@@ -402,6 +405,7 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
     }.bind(this));
       return '{' + properties.join(',') + '}';
     case AST.Identifier:
+      ensureSafeMemberName(ast.name);
       intoId = this.nextId();
       this.if_(this.getHasOwnProperty('l', ast.name),
                     this.assign(intoId, this.nonComputedMember('l', ast.name)));
@@ -429,21 +433,26 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
       }
       if (ast.computed) {
         var right = this.recurse(ast.property);
+        this.addEnsureSafeMemberName(right);
         if (create) {
           this.if_(this.not(this.computedMember(left, right)), 
               this.assign(this.computedMember(left, right), '{}'));
         }
-        this.if_(left, this.assign(intoId, this.computedMember(left, right)));
+        this.if_(left, this.assign(intoId, 
+          'ensureSafeObject(' + this.computedMember(left, right) + ')'));
         if (context) {
           context.name = right;
           context.computed = true;
         }
       } else {
+        ensureSafeMemberName(ast.property.name);
         if (create) {
           this.if_(this.not(this.nonComputedMember(left, ast.property.name)), 
             this.assign(this.nonComputedMember(left, ast.property.name), '{}'));
         }
-        this.if_(left, this.assign(intoId, this.nonComputedMember(left, ast.property.name)));
+        this.if_(left, 
+          this.assign(intoId, 
+            'ensureSafeObject(' + this.nonComputedMember(left, ast.property.name) + ')'));
         if (context) {
           context.name = ast.property.name;
           context.computed = false;
@@ -454,9 +463,10 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
     var callContext = {};
       var callee = this.recurse(ast.callee, callContext);
       var args = _.map(ast.arguments, function(arg) {
-        return this.recurse(arg);
+        return 'ensureSafeObject(' + this.recurse(arg) + ')';
       }.bind(this));
       if (callContext.name) {
+        this.addEnsureSafeObject(callContext.context);
         if (callContext.computed) {
           callee = this.computedMember(callContext.context, callContext.name);
         } else {
@@ -493,11 +503,11 @@ ASTCompiler.prototype.escape = function (value) {
 
 ASTCompiler.prototype.nonComputedMember = function(left, right) {
   return '(' + left + ').' + right;
-}
+};
 
 ASTCompiler.prototype.computedMember = function(left, right) {
   return '(' + left + ')[' + right + ']';
-}
+};
 
 ASTCompiler.prototype.if_ = function (test, consequent) {
   this.state.body.push('if(', test, '){', consequent, '}');
@@ -525,6 +535,31 @@ ASTCompiler.prototype.stringEscapeRegex = /[^ a-zA-Z0-9]/g;
 ASTCompiler.prototype.stringEscapeFn = function(c) {
   return '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4);
 };
+
+ASTCompiler.prototype.addEnsureSafeMemberName = function (expr) {
+  this.state.body.push('ensureSafeMemberName(' + expr + ');');
+};
+
+function ensureSafeMemberName(name) {
+  if (name === 'constructor' || name === '__proto__' || 
+      name === '__defineGetter__' || name === '__defineSetter__' || 
+      name === '__lookupGetter__' || name === '__lookupSetter__') {
+    throw 'Attempting to access a disallowed field in Angular expressions!';
+  }
+}
+
+ASTCompiler.prototype.addEnsureSafeObject = function(expr) {
+  this.state.body.push('ensureSafeObject('+ expr + ');');
+};
+
+function ensureSafeObject(obj) {
+  if (obj) {
+    if (obj.window === obj) {
+      throw 'Referencing window in Angular expressions is disallowed!';
+    }
+  }
+  return obj;
+}
 
 // =================================================================================
 //                            parse

@@ -219,7 +219,7 @@ describe('parse', function() {
   
   it('parses a function call.', function() {
     var fn = parse('aFunction()');
-    fn({aFunction: function() {return 42}}).should.eql(42);
+    fn({aFunction: function() {return 42;}}).should.eql(42);
   });
   
   it('parses a function call with a single number argument.', function() {
@@ -292,7 +292,7 @@ describe('parse', function() {
       aFunction: function() {
         return this;
       }
-    }
+    };
     var fn = parse('aFunction()');
     fn(scope, locals).should.be.exactly(locals);
   });
@@ -331,4 +331,84 @@ describe('parse', function() {
     fn(scope);
     scope.some.nested.property.path.should.eql(42);
   });
+  
+  it('does not allow calling the function constructor.', function() {
+    (function() {
+      var fn = parse('aFunction.constructor("return window;")');
+      fn({aFunction: function () {}});
+    }).should.throw();
+  });
+  
+  it('does not allow calling __proto__', function () {
+    (function() {
+      var fn = parse('obj.__proto__');
+      fn({obj: {}});
+    }).should.throw();
+  });
+  
+  it('does not allow calling __defineGetter__', function () {
+    (function() {
+      var fn = parse('obj.__defineGetter__("evil", fn)');
+      fn({obj: {}, fn: function() {}});
+    }).should.throw();
+  });
+  
+  it('does not allow calling __defineSetter__', function () {
+    (function() {
+      var fn = parse('obj.__defineSetter__("evil", fn)');
+      fn({obj: {}, fn: function() {}});
+    }).should.throw();
+  });
+  
+  it('does not allow calling __lookupGetter__', function () {
+    (function() {
+      var fn = parse('obj.__lookupGetter__("evil")');
+      fn({obj: {}});
+    }).should.throw();
+  });
+    
+  it('does not allow calling __lookupSetter__', function () {
+    (function() {
+      var fn = parse('obj.__lookupSetter__("evil")');
+      fn({obj: {}});
+    }).should.throw();
+  });
+  
+  it('does not allow accessing window as computed property.', function () {
+    (function() {
+    var fn = parse('anObject["wnd"]');
+      fn({anObject: {wnd: window}});
+    }).should.throw();
+  });
+  
+  it('does not allow accessing window as non-computed property.', function () {
+    (function() {
+      var fn = parse('anObject.wnd');
+      fn({anObject: {wnd: window}});
+    }).should.throw();
+  });
+  
+  it('does not allow passing window as function argument.', function () {
+    (function() {
+      var fn = parse('aFunction(wnd)');
+      fn({aFunction: function() {}, wnd: window});
+    }).should.throw();
+  });
+  
+  it('does not allow calling methods on window.', function() {
+    (function () {
+      var fn = parse('wnd.scrollTo(0)');
+      fn({wnd: window});
+    }).should.throw();
+  });
+  
+  it('does not allow functions to return window.', function () {
+    (function() {
+      var fn = parse('getWnd()');
+      fn({getWnd: function () {
+        return window;
+      }})      
+    }).should.throw();
+  });
+  
 });

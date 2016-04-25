@@ -211,7 +211,7 @@ Scope.prototype.$watchCollection = function(watchFn, listenerFn) {
     }
   };
   return this.$watch(internalWatchFn, internalListenerFn);
-}
+};
 
 Scope.prototype.$$areEqual = function(newValue, oldValue, valueEq) {
   if(valueEq) {
@@ -385,7 +385,7 @@ Scope.prototype.$on = function (eventName, listener) {
     if (index >= 0) {
       listeners[index] = null;
     }
-  }
+  };
 };
 
 Scope.prototype.$$fireEventOnScope = function (eventName, listenerArgs) {
@@ -403,7 +403,7 @@ Scope.prototype.$$fireEventOnScope = function (eventName, listenerArgs) {
       i++;
     }
   }
-}
+};
 
 Scope.prototype.$emit = function(eventName) {
   var propagationStopped = false;
@@ -424,7 +424,7 @@ Scope.prototype.$emit = function(eventName) {
     event.currentScope = scope;
     scope.$$fireEventOnScope(eventName, listenerArgs);
     scope = scope.$parent;
-  } while(scope && !propagationStopped)
+  } while(scope && !propagationStopped);
   event.currentScope = null;
   return event;
 };

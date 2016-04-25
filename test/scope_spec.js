@@ -995,7 +995,7 @@ describe('Scope', function() {
       child1.$$children.length.should.eql(0);
 
       child2.$$children.length.should.eql(1);
-      child2.$$children[0].should.exactly(child2_1)
+      child2.$$children[0].should.exactly(child2_1);
     });
 
     it("digests its children", function() {
@@ -1760,7 +1760,7 @@ describe('Scope', function() {
 
         var listener = function() {
           deregistered();
-        }
+        };
         var nextListener = sinon.spy();
 
         deregistered = scope.$on('someEvent', listener);
@@ -1974,9 +1974,6 @@ describe('Scope', function() {
 
       listener.called.should.be.false();
     });
-
-
-
+    
   });
-
 });
