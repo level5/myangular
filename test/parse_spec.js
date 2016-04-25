@@ -405,9 +405,56 @@ describe('parse', function() {
   it('does not allow functions to return window.', function () {
     (function() {
       var fn = parse('getWnd()');
-      fn({getWnd: function () {
-        return window;
-      }})      
+      fn({getWnd: _.constant(window)});      
+    }).should.throw();
+  });
+  
+  it('does not allow assigning window.', function () {
+    (function() {
+      var fn = parse('wnd = anObject');
+      fn({anObject: window});
+    }).should.throw();
+  });
+  
+  it('does not allow referenceing window.', function () {
+    (function() {
+      var fn = parse('wnd');
+      fn({wnd:window});
+    }).should.throw();
+  });
+  
+  it('does not allow calling functions on DOM elements.', function() {
+    (function () {
+      var fn = parse('el.setAttribute("evil", "true")');
+      fn({el: document.documentElement});
+    }).should.throw();
+  });
+  
+  it('does not allow calling the aliased function constructor.', function () {
+    (function () {
+      var fn = parse('fnConstructor("return window;")');
+      fn({fnConstructor:(function() {}).constructor});
+    }).should.throw();
+  });
+  
+  it('does not allow calling function on Object.', function() {
+    (function() {
+      var fn = parse('obj.create({})');
+      fn({obj: Object});
+    }).should.throw();
+  });
+  
+  if('does not allow calling call.', function() {
+    (function() {
+      var fn = parse('fun.call(obj)');
+      fn({fun: function() {}, obj: {}});
+    }).should.throw();
+  });
+  
+  if('does not allow calling apply.', function() {
+    (function() {
+      var fn = parse('fun.apply(obj)');
+      fn({fun: function() {}, obj: {}});
     }).should.throw();
   });
   
