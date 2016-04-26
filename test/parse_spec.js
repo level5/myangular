@@ -467,4 +467,11 @@ describe('parse', function() {
     parse('+a')({}).should.eql(0);
   });
   
+  it('parses a unary !', function () {
+    parse('!true')().should.be.false();
+    parse('!42')().should.be.false();
+    parse('!a')({a: false}).should.be.true();
+    parse('!!a')({a: false}).should.be.false();
+  });
+  
 });

@@ -45,7 +45,8 @@ function Lexer() {
 }
 
 var OPERATORS = {
-  '+': true
+  '+': true,
+  '!': true
 };
 
 Lexer.prototype.lex = function(text) {
@@ -245,11 +246,12 @@ AST.prototype.program = function() {
 };
 
 AST.prototype.unary = function() {
-  if (this.expect('+')) {
+  var token;
+  if ((token = this.expect('+', '!'))) {
     return {
       type: AST.UnaryExpression,
-      operator: '+',
-      argument: this.primary()
+      operator: token.text,
+      argument: this.unary()
     };
   } else {
     return this.primary();
@@ -397,12 +399,19 @@ ASTCompiler.prototype.compile = function(text) {
     (
       this.state.vars.length? 'var ' + this.state.vars.join(',') + ';' : ''
     ) + this.state.body.join('') + '}; return fn;';
+    
+  console.log('Fn:', fnString);
   /* jshint -W054 */
   return new Function(
     'ensureSafeMemberName', 
     'ensureSafeObject', 
     'ensureSafeFunction',
-    fnString)(ensureSafeMemberName, ensureSafeObject, ensureSafeFunction);
+    'ifDefined',
+    fnString)(
+      ensureSafeMemberName, 
+      ensureSafeObject, 
+      ensureSafeFunction,
+      ifDefined);
   /* jshint +W054 */  
 };
 
@@ -513,7 +522,7 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
       }
       return this.assign(leftExpr, 'ensureSafeObject(' + this.recurse(ast.right) + ')');
     case AST.UnaryExpression:
-      return ast.operator + '(' + this.recurse(ast.argument) + ')';
+      return ast.operator + '(' + this.ifDefined(this.recurse(ast.argument), 0) + ')';
     default:
 
   }
@@ -554,6 +563,14 @@ ASTCompiler.prototype.not = function(e) {
 ASTCompiler.prototype.getHasOwnProperty = function(object, property) {
   return object + '&&(' + this.escape(property) + ' in ' + object + ')';                                         + object + ')';
 };
+
+ASTCompiler.prototype.ifDefined = function(value, defaultValue) {
+  return 'ifDefined(' + value + ',' + this.escape(defaultValue) + ')';
+};
+
+function ifDefined(value, defaultValue) {
+  return typeof value === 'undefined' ? defaultValue: value;
+}
 
 ASTCompiler.prototype.nextId = function() {
   var id = 'v' + (this.state.nextId++);
