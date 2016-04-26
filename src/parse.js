@@ -44,6 +44,10 @@ var _ = require('lodash');
 function Lexer() {
 }
 
+var OPERATORS = {
+  '+': true
+};
+
 Lexer.prototype.lex = function(text) {
   this.text = text;
   this.index = 0;
@@ -67,7 +71,13 @@ Lexer.prototype.lex = function(text) {
     } else  if (this.isWhitespace(this.ch)) {
       this.index++;
     } else {
-      throw 'Unexpected next character: ' + this.ch;
+      var op = OPERATORS[this.ch];
+      if (op) {
+        this.tokens.push({text: this.ch});
+        this.index++;
+      } else {
+        throw 'Unexpected next character: ' + this.ch;
+      }
     }
   }
 
@@ -107,7 +117,7 @@ Lexer.prototype.readNumber = function() {
                     nextCh && this.isNumber(nextCh)) {
         number += ch;
       } else if (this.isExpOperator(ch) && prevCh === 'e' &&
-                    !this.isNumber(nextCh)) {
+                    (!nextCh || !this.isNumber(nextCh))) {
         // 这里的ch只会是+或者-，因为数字的话，第一个if分支会处理掉的。所以要求
         // nextCh必须是数字
         throw "Invalid exponent";
@@ -215,6 +225,7 @@ AST.ThisExpression = 'ThisExpression';
 AST.MemberExpression = 'MemberExpression';
 AST.CallExpression = 'CallExpression';
 AST.AssignmentExpression = 'AssignmentExpression';
+AST.UnaryExpression = 'UnaryExpression';
 
 AST.prototype.constants = {
   'null': {type: AST.Literal, value: null},
@@ -225,11 +236,24 @@ AST.prototype.constants = {
 
 AST.prototype.ast = function(text) {
   this.tokens = this.lexer.lex(text);
+  console.log('tokens:', this.tokens );
   return this.program();
 };
 
 AST.prototype.program = function() {
   return {type: AST.Program, body: this.assignment()};
+};
+
+AST.prototype.unary = function() {
+  if (this.expect('+')) {
+    return {
+      type: AST.UnaryExpression,
+      operator: '+',
+      argument: this.primary()
+    };
+  } else {
+    return this.primary();
+  }
 };
 
 AST.prototype.primary = function () {
@@ -348,9 +372,9 @@ AST.prototype.consume = function (e) {
 };
 
 AST.prototype.assignment = function() {
-  var left = this.primary();
+  var left = this.unary();
   if (this.expect('=')) {
-    var right = this.primary();
+    var right = this.unary();
     return {type: AST.AssignmentExpression, left: left, right: right};
   }
   return left;
@@ -373,7 +397,6 @@ ASTCompiler.prototype.compile = function(text) {
     (
       this.state.vars.length? 'var ' + this.state.vars.join(',') + ';' : ''
     ) + this.state.body.join('') + '}; return fn;';
-    console.log('@@@@@', fnString);
   /* jshint -W054 */
   return new Function(
     'ensureSafeMemberName', 
@@ -489,6 +512,8 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
         leftExpr = this.nonComputedMember(leftContext.context, leftContext.name);
       }
       return this.assign(leftExpr, 'ensureSafeObject(' + this.recurse(ast.right) + ')');
+    case AST.UnaryExpression:
+      return ast.operator + '(' + this.recurse(ast.argument) + ')';
     default:
 
   }

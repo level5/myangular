@@ -458,4 +458,13 @@ describe('parse', function() {
     }).should.throw();
   });
   
+  it('parses a unary +', function() {
+    parse('+42')().should.eql(42);
+    parse('+a')({a: 42}).should.eql(42);
+  });
+  
+  it('replaces undefined with zero for unary +.', function() {
+    parse('+a')({}).should.eql(0);
+  });
+  
 });
