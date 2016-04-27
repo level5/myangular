@@ -46,6 +46,7 @@ function Lexer() {
 
 var OPERATORS = {
   '+': true,
+  '-': true,
   '!': true
 };
 
@@ -247,7 +248,7 @@ AST.prototype.program = function() {
 
 AST.prototype.unary = function() {
   var token;
-  if ((token = this.expect('+', '!'))) {
+  if ((token = this.expect('+', '!', '-'))) {
     return {
       type: AST.UnaryExpression,
       operator: token.text,

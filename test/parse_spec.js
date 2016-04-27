@@ -474,4 +474,15 @@ describe('parse', function() {
     parse('!!a')({a: false}).should.be.false();
   });
   
+  it('parses a unary -', function() {
+    parse('-42')().should.eql(-42);
+    parse('-a')({a: -42}).should.eql(42);
+    parse('--a')({a: -42}).should.eql(-42);
+    parse('-a')({}).should.equal(0);
+  });
+  
+  it('parses a ! in a string.', function() {
+    parse('"!"').should.eql('!');
+  });
+  
 });
