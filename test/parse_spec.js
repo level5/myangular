@@ -482,7 +482,74 @@ describe('parse', function() {
   });
   
   it('parses a ! in a string.', function() {
-    parse('"!"').should.eql('!');
+    parse('"!"')().should.eql('!');
   });
   
+  it('parses a multiplication.', function() {
+    parse('21*2')().should.eql(42);
+  });
+  
+  it('parses a division.', function() {
+    parse('84 / 2')().should.eql(42);
+  });
+  
+  it('parses a remainder.', function() {
+    parse('85 % 43')().should.eql(42);
+  });
+  
+  it('parses several multiplicatives.', function () {
+    parse('36 * 2 % 5')().should.eql(2);
+  });
+  
+  it('parses an addition.', function() {
+    parse('20 + 22')().should.eql(42);
+  });
+  
+  it('parses a subtraction.', function () {
+    parse('42 - 22')().should.eql(20);
+  });
+  
+  it('parses multiplicatives on a higher precedence than additives.', function() {
+    parse('2 + 3 * 5')().should.eql(17);
+    parse('2 + 3 * 2 + 3')().should.eql(11);
+  });
+  
+  it('substitues undefined with zero in addition.', function() {
+    parse('a + 22')().should.eql(22);
+    parse('42 + a')().should.eql(42);
+  });
+  
+  it('substitues undefined with zero in subtraction.', function() {
+    parse('a - 22')().should.eql(-22);
+    parse('42 - a')().should.eql(42);
+  });
+  
+  it('parses relational operators.', function () {
+    parse('1 < 2')().should.be.true();
+    parse('1 > 2')().should.be.false();
+    parse('2 <= 1')().should.be.false();
+    parse('1 <= 2')().should.be.true();
+    parse('2 <= 2')().should.be.true();
+    parse('1 >= 2')().should.be.false();
+    parse('2 >= 2')().should.be.true();
+    parse('2 >= 1')().should.be.true();
+  });
+  
+  it('parses equality operators.', function() {
+    parse('42 == 42')().should.be.true();
+    parse('42 == "42"')().should.be.true();
+    parse('42 != 42')().should.be.false();
+    
+    parse('42 === 42')().should.be.true();
+    parse('42 === "42"')().should.be.false();
+    parse('42 !== 42')().should.be.false();
+  });
+  
+  it('parses relationals on a higher precedence than equality.', function() {
+    parse('2 == "2" > 2 === "2"').should.be.false();
+  });
+  
+  it('parses additives on a higher precedence than relationals.', function() {
+    parse('2 + 3 < 6 - 2')().should.be.false();
+  });
 });
