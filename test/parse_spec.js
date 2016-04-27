@@ -546,10 +546,103 @@ describe('parse', function() {
   });
   
   it('parses relationals on a higher precedence than equality.', function() {
-    parse('2 == "2" > 2 === "2"').should.be.false();
+    parse('2 == "2" > 2 === "2"')().should.be.false();
   });
   
   it('parses additives on a higher precedence than relationals.', function() {
     parse('2 + 3 < 6 - 2')().should.be.false();
+  });
+  
+  it('parses logical AND', function () {
+    parse('true && true')().should.be.true();
+    parse('true && false')().should.be.false();
+  });
+  
+  it('parses logical OR', function () {
+    parse('true || true')().should.be.true();
+    parse('true || false')().should.be.true();
+    parse('false || false')().should.be.false();
+  });
+  
+  it('parses multiple ANDs', function () {
+    parse('true && true && true')().should.be.true();
+    parse('true && true && false')().should.be.false();
+  });
+  
+  it('parse multiple ORs', function () {
+    parse('true || true || true')().should.be.true();
+    parse('true || true || false')().should.be.true();
+    parse('false || false || true')().should.be.true();
+    parse('false || false || false')().should.be.false();
+  });
+  
+  it('short-circuits AND', function () {
+    var invoked;
+    var scope = {fn: function () {
+      invoked = true;
+    }};
+    
+    parse('false && fn()')(scope);
+    
+    should(invoked).be.undefined();
+  });
+    
+  it('short-circuits OR', function () {
+    var invoked;
+    var scope = {fn: function () {
+      invoked = true;
+    }};
+    
+    parse('true || fn()')(scope);
+    
+    should(invoked).be.undefined();
+  });
+  
+  it('parses AND with a higher precedence than OR', function() {
+    parse('false && true || true')().should.be.true();
+  });
+  
+  it('parses OR with a lower precedence than equality.', function() {
+    parse('1 === 2 || 2 === 2')().should.be.true();
+  });
+  
+  it('parses the ternary expression.', function() {
+    parse('a === 42 ? true : false')({a: 42}).should.be.true();
+    parse('a === 42 ? true : false')({a: 43}).should.be.false();
+  });
+  
+  it('parses OR with a higher precedence than ternary', function() {
+    parse(' 0 || 1 ? 0 || 2 : 0 || 3')().should.eql(2);
+  });
+  
+  it('parse nested ternaries', function() {
+    
+    parse('a === 42 ? b === 42 ? "a and b" : "a" : c === 42 ? "c" : "none"')({
+      a: 44,
+      b: 43,
+      c: 42
+    }).should.eql('c');
+    
+  });
+  
+  it('parses parentheses altering precedence order', function () {
+    parse('21 * (3 - 1)')().should.eql(42);
+    parse('false && (true || true)')().should.be.false();
+    parse('-((a % 2) === 0 ? 1 : 2)')({a : 42}).should.eql(-1);
+  });
+  
+  it('parses serveral statements', function() {
+    var fn = parse('a = 1; b = 2; c = 3');
+    var scope = {};
+    fn(scope);
+    scope.should.eql({
+      a: 1, 
+      b: 2, 
+      c: 3
+    });
+  });
+  
+  it('returns the value of the last statment', function() {
+    parse('a = 1; b = 2; a + b')({}).should.eql(3);
   });
 });
