@@ -286,12 +286,16 @@ AST.prototype.program = function() {
 
 AST.prototype.filter = function() {
   var left = this.assignment();
-  if (this.expect('|')) {
+  while (this.expect('|')) {
+    var args = [left];
     left = {
       type: AST.CallExpression,
       callee: this.identifier(),
-      arguments: [left], 
+      arguments: args, 
       filter: true
+    }
+    while (this.expect(':')) {
+      args.push(this.assignment());
     }
   }
   return left;
@@ -562,6 +566,8 @@ ASTCompiler.prototype.compile = function(text) {
     (
       this.state.vars.length? 'var ' + this.state.vars.join(',') + ';' : ''
     ) + this.state.body.join('') + '}; return fn;';
+    
+  console.log('fn =', fnString);
 
   /* jshint -W054 */
   return new Function(
@@ -667,7 +673,7 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
         callee = this.filter(ast.callee.name);
         args = _.map(ast.arguments, function(argument) {
           return this.recurse(argument);
-        });
+        }.bind(this));
         // Array.prototype.toString() = xxx,xxx,xxx
         return callee + '(' + args + ')';
       } else {
@@ -772,9 +778,11 @@ function ifDefined(value, defaultValue) {
   return typeof value === 'undefined' ? defaultValue: value;
 }
 
-ASTCompiler.prototype.nextId = function() {
+ASTCompiler.prototype.nextId = function(skip) {
   var id = 'v' + (this.state.nextId++);
-  this.state.vars.push(id);
+  if (!skip) {
+    this.state.vars.push(id);
+  }
   return id;
 };
 
@@ -840,7 +848,16 @@ ASTCompiler.prototype.filter = function(name) {
   return this.state.filters[name];
 };
 
-ASTCompiler.prototype.filterPrefix = function() {};
+ASTCompiler.prototype.filterPrefix = function() {
+  if (_.isEmpty(this.state.filters)) {
+    return '';
+  } else {
+    var parts = _.map(this.state.filters, function(varName, filterName) {
+      return varName + '=' + 'filter(' + this.escape(filterName) + ')';
+    }.bind(this));
+    return 'var ' + parts.join(',') + ';';
+  }
+};
 
 // =================================================================================
 //                            parse

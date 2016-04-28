@@ -658,5 +658,44 @@ describe('parse', function() {
     var fn = parse('aString | upcase');
     fn({aString: 'Hello'}).should.eql('HELLO');
   });
+  
+  it('can parse filter chain expression.', function() {
+    register('upcase', function() {
+      return function(s) {
+        return s.toUpperCase();
+      };
+    });
+    
+    register('exclamate', function() {
+      return function(s) {
+        return s + '!';
+      };
+    });
+    
+    var fn = parse('"hello" | upcase | exclamate');
+    fn().should.eql('HELLO!');
+  });
+  
+  it('can parse an additional arugment to filter', function() {
+    register('repeat', function() {
+      return function (s, times) {
+        return _.repeat(s, times);
+      };
+    });
+    
+    var fn = parse('"hello" | repeat:3');
+    fn().should.eql('hellohellohello');
+  });
+  
+  it('can parse serveral additional arguments to filter.', function () {
+    register('surround', function () {
+      return function(s, left, right) {
+        return left + s + right;
+      };
+    });
+    
+    var fn = parse('"hello" | surround:"*":"!"');
+    fn().should.eql('*hello!');
+  });
 
 });
