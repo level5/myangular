@@ -566,8 +566,6 @@ ASTCompiler.prototype.compile = function(text) {
     (
       this.state.vars.length? 'var ' + this.state.vars.join(',') + ';' : ''
     ) + this.state.body.join('') + '}; return fn;';
-    
-  console.log('fn =', fnString);
 
   /* jshint -W054 */
   return new Function(
