@@ -4,7 +4,7 @@ var sinon = require('sinon');
 var _ = require('lodash');
 
 var parse = require('../src/parse');
-var register = require('../src/filter');
+var register = require('../src/filter').register;
 
 describe('parse', function() {
 
@@ -649,8 +649,8 @@ describe('parse', function() {
   });
 
   it('can parse filter expressions', function() {
-    register('upcase', funtion() {
-      return function(str) {
+    register('upcase', function () {
+      return function (str) {
         return str.toUpperCase();
       };
     });
