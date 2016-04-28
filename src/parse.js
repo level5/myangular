@@ -61,7 +61,8 @@ var OPERATORS = {
   '<=': true,
   '>=': true,
   '&&': true,
-  '||': true
+  '||': true,
+  '|': true,
 };
 
 Lexer.prototype.lex = function(text) {
@@ -219,7 +220,7 @@ Lexer.prototype.readIdent = function () {
     }
     this.index++;
   }
-  
+
   var token = {
     text: text,
     identifier: true
@@ -264,7 +265,6 @@ AST.prototype.constants = {
 
 AST.prototype.ast = function(text) {
   this.tokens = this.lexer.lex(text);
-  console.log('tokens:', this.tokens );
   return this.program();
 };
 
@@ -276,13 +276,24 @@ AST.prototype.program = function() {
     }
     if (!this.expect(';')) {
       return {
-        type: AST.Program, 
+        type: AST.Program,
         body: body
       };
     }
   }
 };
 
+AST.prototype.filter = function() {
+  var left = this.assignment();
+  if (this.expect('|')) {
+    left = {
+      type: AST.CallExpression,
+      callee: this.identifier(),
+      arguments: [left]
+    }
+  }
+  return left;
+}
 
 AST.prototype.assignment = function() {
   var left = this.ternary();
@@ -344,7 +355,7 @@ AST.prototype.equality = function () {
   while((token = this.expect('==', '!=', '===', '!=='))) {
     left = {
       type: AST.BinaryExpression,
-      left: left, 
+      left: left,
       operator: token.text,
       right: this.relational()
     }
@@ -418,7 +429,7 @@ AST.prototype.primary = function () {
     primary = this.object();
   } else if (this.constants.hasOwnProperty(this.tokens[0].text)) {
     primary = this.constants[this.consume().text];
-  } else if (this.peek().identifier) { 
+  } else if (this.peek().identifier) {
     primary = this.identifier();
   } else {
     primary = this.constant();
@@ -431,7 +442,7 @@ AST.prototype.primary = function () {
         object: primary,
         property: this.primary(),
         computed: true
-      };  
+      };
       this.consume(']');
     } else if (next.text === '.') {
     primary = {
@@ -442,7 +453,7 @@ AST.prototype.primary = function () {
     };
     } else if (next.text === '(') {
       primary = {
-        type: AST.CallExpression, 
+        type: AST.CallExpression,
         callee: primary,
         arguments: this.parseArguments()
       };
@@ -469,7 +480,7 @@ AST.prototype.parseArguments = function() {
   }
   return args;
 };
- 
+
 AST.prototype.expect = function (e1, e2, e3, e4) {
   var token = this.peek(e1, e2, e3, e4);
   if (token) {
@@ -480,11 +491,11 @@ AST.prototype.expect = function (e1, e2, e3, e4) {
 AST.prototype.peek = function (e1, e2, e3, e4) {
  if (this.tokens.length > 0) {
    var text = this.tokens[0].text;
-   if (text === e1 || text === e2 || text === e3 || text === e4 || 
+   if (text === e1 || text === e2 || text === e3 || text === e4 ||
         (!e1 && !e2 && !e3 && !e4)) {
      return this.tokens[0];
    }
- } 
+ }
 };
 
 AST.prototype.arrayDeclaration = function () {
@@ -538,25 +549,24 @@ ASTCompiler.prototype.compile = function(text) {
   var ast = this.astBuilder.ast(text);
   this.state = {body: [], nextId: 0, vars:[]};
   this.recurse(ast);
-  
-  var fnString = 'var fn=function(s,l){' + 
+
+  var fnString = 'var fn=function(s,l){' +
     (
       this.state.vars.length? 'var ' + this.state.vars.join(',') + ';' : ''
     ) + this.state.body.join('') + '}; return fn;';
-    
-  console.log('Fn:', fnString);
+
   /* jshint -W054 */
   return new Function(
-    'ensureSafeMemberName', 
-    'ensureSafeObject', 
+    'ensureSafeMemberName',
+    'ensureSafeObject',
     'ensureSafeFunction',
     'ifDefined',
     fnString)(
-      ensureSafeMemberName, 
-      ensureSafeObject, 
+      ensureSafeMemberName,
+      ensureSafeObject,
       ensureSafeFunction,
       ifDefined);
-  /* jshint +W054 */  
+  /* jshint +W054 */
 };
 
 ASTCompiler.prototype.recurse = function(ast, context, create) {
@@ -573,13 +583,12 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
     case AST.ArrayExpression:
       // _.map方法的API，最后一个参数是this吗？
       var elements = _.map(ast.elements, function(element) {
-        console.log(this);
         return this.recurse(element);
       }.bind(this));
       return '[' + elements.join(',') + ']';
     case AST.ObjectExpression:
     var properties = _.map(ast.properties, function(property) {
-      var key = property.key.type === AST.Identifier ? 
+      var key = property.key.type === AST.Identifier ?
               property.key.name :
               this.escape(property.key.value);
       var value = this.recurse(property.value);
@@ -592,12 +601,12 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
       this.if_(this.getHasOwnProperty('l', ast.name),
                     this.assign(intoId, this.nonComputedMember('l', ast.name)));
       if (create) {
-        this.if_(this.not(this.getHasOwnProperty('l', ast.name)) + 
+        this.if_(this.not(this.getHasOwnProperty('l', ast.name)) +
             ' && s && ' +
-            this.not(this.getHasOwnProperty('s', ast.name)), 
+            this.not(this.getHasOwnProperty('s', ast.name)),
             this.assign(this.nonComputedMember('s', ast.name), '{}'));
       }
-      this.if_(this.not(this.getHasOwnProperty('l', ast.name)) + '&& s', 
+      this.if_(this.not(this.getHasOwnProperty('l', ast.name)) + '&& s',
                     this.assign(intoId, this.nonComputedMember('s', ast.name)));
       if (context) {
         context.context = this.getHasOwnProperty('l', ast.name) + '?l:s';
@@ -618,10 +627,10 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
         var right = this.recurse(ast.property);
         this.addEnsureSafeMemberName(right);
         if (create) {
-          this.if_(this.not(this.computedMember(left, right)), 
+          this.if_(this.not(this.computedMember(left, right)),
               this.assign(this.computedMember(left, right), '{}'));
         }
-        this.if_(left, this.assign(intoId, 
+        this.if_(left, this.assign(intoId,
           'ensureSafeObject(' + this.computedMember(left, right) + ')'));
         if (context) {
           context.name = right;
@@ -630,11 +639,11 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
       } else {
         ensureSafeMemberName(ast.property.name);
         if (create) {
-          this.if_(this.not(this.nonComputedMember(left, ast.property.name)), 
+          this.if_(this.not(this.nonComputedMember(left, ast.property.name)),
             this.assign(this.nonComputedMember(left, ast.property.name), '{}'));
         }
-        this.if_(left, 
-          this.assign(intoId, 
+        this.if_(left,
+          this.assign(intoId,
             'ensureSafeObject(' + this.nonComputedMember(left, ast.property.name) + ')'));
         if (context) {
           context.name = ast.property.name;
@@ -642,7 +651,7 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
         }
       }
       return intoId;
-    case AST.CallExpression: 
+    case AST.CallExpression:
     var callContext = {};
       var callee = this.recurse(ast.callee, callContext);
       var args = _.map(ast.arguments, function(arg) {
@@ -658,7 +667,7 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
       }
       this.addEnsureSafeFunction(callee);
       return callee + '&&ensureSafeObject(' + callee + '(' + args.join(',') + '))';
-    case AST.AssignmentExpression: 
+    case AST.AssignmentExpression:
       var leftContext = {};
       this.recurse(ast.left, leftContext, true);
       var leftExpr;
@@ -672,11 +681,11 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
       return ast.operator + '(' + this.ifDefined(this.recurse(ast.argument), 0) + ')';
     case AST.BinaryExpression:
       if (ast.operator === '+' || ast.operator === '-') {
-        return '(' + 
-          this.ifDefined(this.recurse(ast.left), 0) + 
-        ')' + ast.operator + '(' + 
-          this.ifDefined(this.recurse(ast.right), 0) + 
-        ')'; 
+        return '(' +
+          this.ifDefined(this.recurse(ast.left), 0) +
+        ')' + ast.operator + '(' +
+          this.ifDefined(this.recurse(ast.right), 0) +
+        ')';
       }
       return '(' + this.recurse(ast.left) + ')' + ast.operator + '(' + this.recurse(ast.right) +')';
     case AST.LogicalExpression:
@@ -685,13 +694,13 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
       this.if_(ast.operator === '&&' ? intoId: this.not(intoId),
         this.assign(intoId, this.recurse(ast.right)));
       return intoId;
-    case AST.ConditionalExpression: 
+    case AST.ConditionalExpression:
       intoId = this.nextId();
       var testId = this.nextId();
       this.state.body.push(this.assign(testId, this.recurse(ast.test)));
-      this.if_(testId, 
+      this.if_(testId,
         this.assign(intoId, this.recurse(ast.consequent)));
-      this.if_(this.not(testId), 
+      this.if_(this.not(testId),
         this.assign(intoId, this.recurse(ast.alternate)));
       return intoId;
     default:
@@ -728,7 +737,7 @@ ASTCompiler.prototype.assign = function(id, value) {
 };
 
 ASTCompiler.prototype.not = function(e) {
-  return '!(' + e + ')'; 
+  return '!(' + e + ')';
 };
 
 ASTCompiler.prototype.getHasOwnProperty = function(object, property) {
@@ -759,8 +768,8 @@ ASTCompiler.prototype.addEnsureSafeMemberName = function (expr) {
 };
 
 function ensureSafeMemberName(name) {
-  if (name === 'constructor' || name === '__proto__' || 
-      name === '__defineGetter__' || name === '__defineSetter__' || 
+  if (name === 'constructor' || name === '__proto__' ||
+      name === '__defineGetter__' || name === '__defineSetter__' ||
       name === '__lookupGetter__' || name === '__lookupSetter__') {
     throw 'Attempting to access a disallowed field in Angular expressions!';
   }
