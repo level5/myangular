@@ -719,6 +719,50 @@ describe('Scope', function() {
       scope.$digest();
       scope.counter.should.eql(0);
     });
+    
+    it('accepts expressions for watch functions.', function() {
+      var theValue;
+      scope.aValue = 42;
+      scope.$watch('aValue', function(newValue, oldValue, scope) {
+        theValue = newValue;
+      });
+      
+      scope.$digest();
+      theValue.should.eql(42);
+    });
+    
+    it('accepts expressions for watch functions', function () {
+      var theValue;
+      scope.aColl = [1, 2, 3];
+      scope.$watchCollection('aColl', function (newValue, oldValue, scope) {
+        theValue = newValue;
+      });
+      
+      scope.$digest();
+      theValue.should.eql([1, 2, 3]);
+    });
+    
+    it('accepts expression in $eval', function() {
+      scope.$eval('42').should.eql(42);
+    });
+    
+    it('accepts expression in $apply', function() {
+      scope.aFunction = _.constant(42);
+      scope.$apply('aFunction()').should.eql(42);
+    });
+    
+    it('accepts expresions in $evalAsync', function(done) {
+      var called;
+      scope.aFunction = function () {
+        called = true;
+      };
+      
+      scope.$evalAsync('aFunction()');
+      scope.$$postDigest(function() {
+        called.should.be.true();
+        done();
+      });
+    });
 
   });
 

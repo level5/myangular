@@ -697,5 +697,49 @@ describe('parse', function() {
     var fn = parse('"hello" | surround:"*":"!"');
     fn().should.eql('*hello!');
   });
+  
+  it('return the function itself when given one.', function() {
+    var fn = function () {};
+    parse(fn).should.be.exactly(fn);
+  });
+  
+  it('still return a function when given no argument', function() {
+    parse().should.be.Function();
+  });
+  
+  it('makes integers literal', function() {
+    var fn = parse('42');
+    fn.literal.should.be.true();
+  });
+  
+  it('make string literal', function() {
+    var fn = parse('"abc"');
+    fn.literal.should.be.true();
+  });
+  
+  it('marks boolean literal ', function() {
+    var fn = parse('true');
+    fn.literal.should.be.true();
+  });
+  
+  it('mark arrays literal', function() {
+    var fn = parse('[1, 2, aVariable]');
+    fn.literal.should.be.true;
+  });
+
+  it('mark objects literal', function() {
+    var fn = parse('{a: 1, b: aVariable}');
+    fn.literal.should.be.true;
+  });
+  
+  it('marks unary expressions non-literal.', function() {
+    var fn = parse('!false');
+    fn.literal.should.be.false();
+  });
+  
+  it('marks binary expressions non-literal', function() {
+    var fn = parse('1 + 2');
+    fn.literal.should.be.false();
+  });
 
 });
