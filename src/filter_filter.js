@@ -1,10 +1,9 @@
 'use strict';
 
 var _ = require('lodash');
-var should = require('should');
 
 function filterFilter() {
-  return function(array, filterExpr) {
+  return function(array, filterExpr, comparator) {
     var predicateFn;
     if (_.isFunction(filterExpr)) {
       predicateFn = filterExpr;
@@ -14,7 +13,7 @@ function filterFilter() {
               _.isNull(filterExpr) ||
               _.isObject(filterExpr)
                ) {
-      predicateFn = createPredicateFn(filterExpr);
+      predicateFn = createPredicateFn(filterExpr, comparator);
     } else {
       return array;
     }
@@ -22,30 +21,33 @@ function filterFilter() {
   };
 }
 
-function createPredicateFn(expression) {
+function createPredicateFn(expression, comparator) {
 
   var shouldMatchPrimitives =
     _.isObject(expression) && ('$' in expression);
 
-  function comparator(actual, expected) {
-    if (_.isUndefined(actual)) {
-      return false;
+   if (comparator === true) {
+     comparator = _.isEqual;
+   } else if(!_.isFunction(comparator)) {
+    comparator =  function (actual, expected) {
+      if (_.isUndefined(actual)) {
+        return false;
+      }
+      if (_.isNull(actual) || _.isNull(expected)) {
+        return actual === expected;
+      }
+      actual = ("" + actual).toLowerCase();
+      expected = ("" + expected).toLowerCase();
+      return actual.indexOf(expected) !== -1;
     }
-    if (_.isNull(actual) || _.isNull(expected)) {
-      return actual === expected;
-    }
-    actual = ("" + actual).toLowerCase();
-    expected = ("" + expected).toLowerCase();
-    console.log('compare:', actual, expected, actual.indexOf(expected) !== -1);
-    return actual.indexOf(expected) !== -1;
-  }
+   }
+
 
   function deepCompare(actual, expected, comparator, matchAnyProperty, inWildcard) {
     if (_.isString(expected) && _.startsWith(expected, '!')) {
       return !deepCompare(actual, expected.substring(1), comparator, matchAnyProperty);
     }
     if (_.isArray(actual)) {
-      console.log('aaa', actual, expected, typeof _.any);
       // 靠，没有any啊
       return _.some(actual, function(actualItem) {
         return deepCompare(actualItem, expected, comparator, matchAnyProperty);
@@ -53,6 +55,7 @@ function createPredicateFn(expression) {
     }
     if (_.isObject(actual)) {
       // 这个逻辑暂时没有彻底明白！！！
+      // OK now!
       if (_.isObject(expected) && !inWildcard) {
         return _.every(_.toPlainObject(expected), function(expectedVal, expectedKey) {
           if (_.isUndefined(expectedVal)) {
@@ -80,7 +83,7 @@ function createPredicateFn(expression) {
       return deepCompare(item, expression.$, comparator);
     }
     return deepCompare(item, expression, comparator, true);
-  }
+  };
 }
 
 module.exports = filterFilter;

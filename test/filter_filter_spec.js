@@ -273,4 +273,25 @@ describe('filter filter', function () {
   });
 
 
+  it('allows using a custom comparator', function () {
+    var fn = parse('arr | filter:{$: "o"}:myComparator');
+    fn({
+      arr: ['o', 'oo', 'ao', 'aa'],
+      myComparator: function (left, right) {
+        return left === right;
+      }
+    }).should.eql(['o']);
+  });
+  
+  it('allows using an equality comparator', function () {
+    var fn = parse('arr | filter:{name: "Jo"}:true');
+    fn({
+      arr: [
+        {name: "Jo"},
+        {name: "Joe"}
+      ]
+    }).should.eql([
+      {name: "Jo"}
+    ]);
+  });
 });
