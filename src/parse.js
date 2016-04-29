@@ -291,7 +291,7 @@ AST.prototype.filter = function() {
     left = {
       type: AST.CallExpression,
       callee: this.identifier(),
-      arguments: args, 
+      arguments: args,
       filter: true
     }
     while (this.expect(':')) {
@@ -553,22 +553,23 @@ function ASTCompiler(astBuilder) {
 
 ASTCompiler.prototype.compile = function(text) {
   var ast = this.astBuilder.ast(text);
+  markConstantExpressions(ast);
   this.state = {
-    body: [], 
-    nextId: 0, 
+    body: [],
+    nextId: 0,
     vars:[],
     filters: {}
   };
   this.recurse(ast);
 
-  var fnString = this.filterPrefix() + 
+  var fnString = this.filterPrefix() +
     'var fn=function(s,l){' +
     (
       this.state.vars.length? 'var ' + this.state.vars.join(',') + ';' : ''
     ) + this.state.body.join('') + '}; return fn;';
 
   /* jshint -W054 */
-  return new Function(
+  var fn = new Function(
     'ensureSafeMemberName',
     'ensureSafeObject',
     'ensureSafeFunction',
@@ -581,7 +582,87 @@ ASTCompiler.prototype.compile = function(text) {
       ifDefined,
       filter);
   /* jshint +W054 */
+  fn.literal = this.isLiteral(ast);
+  fn.constant = ast.constant;
+  return fn;
 };
+
+function markConstantExpressions(ast) {
+  var allConstant;
+  switch (ast.type) {
+    case AST.Program:
+      allConstant = true;
+      _.forEach(ast.body, function(expr) {
+        markConstantExpressions(expr);
+        allConstant = allConstant && expr.constant;
+      });
+      ast.constant = allConstant;
+      break;
+    case AST.Literal:
+      ast.constant = true;
+      break;
+    case AST.Identifier:
+      ast.constant = false;
+      break;
+    case AST.ArrayExpression:
+      allConstant = true;
+      _.forEach(ast.elements, function(element) {
+        markConstantExpressions(element);
+        allConstant = allConstant && element.constant;
+      });
+      ast.constant = allConstant;
+      break;
+    case AST.ObjectExpression:
+      allConstant = true;
+      _.forEach(ast.properties, function(property) {
+        markConstantExpressions(property.value);
+        allConstant = allConstant && property.value.constant;
+      });
+      ast.constant = allConstant;
+      break;
+    case AST.ThisExpression:
+      ast.constant = false;
+      break;
+    case AST.MemberExpression:
+      markConstantExpressions(ast.object);
+      if (ast.computed) {
+        markConstantExpressions(ast.property);
+      }
+      ast.constant = ast.object.constant && 
+                      (!ast.computed || ast.property.constant);
+      break;
+    case AST.CallExpression:
+      allConstant = ast.filter ? true : false;
+      _.forEach(ast.arguments, function(arg) {
+        markConstantExpressions(arg);
+        allConstant = allConstant && arg.constant;
+      });
+      ast.constant = allConstant;
+      break;
+    case AST.AssignmentExpression:
+      markConstantExpressions(ast.left);
+      markConstantExpressions(ast.right);
+      ast.constant = ast.left.constant && ast.right.constant;
+      break;
+    case AST.UnaryExpression:
+      markConstantExpressions(ast.argument);
+      ast.constant = ast.argument.constant;
+      break;
+    case AST.BinaryExpression:
+    case AST.LogicalExpression:
+      markConstantExpressions(ast.left);
+      markConstantExpressions(ast.right);
+      ast.constant = ast.left.constant && ast.right.constant;
+      break;
+    case AST.ConditionalExpression:
+      markConstantExpressions(ast.test);
+      markConstantExpressions(ast.consequent);
+      markConstantExpressions(ast.alternate);
+      ast.constant = 
+          ast.test.constant && ast.consequent.constant && ast.alternate.constant;
+      break;
+  }
+}
 
 ASTCompiler.prototype.recurse = function(ast, context, create) {
   var intoId;
@@ -857,6 +938,16 @@ ASTCompiler.prototype.filterPrefix = function() {
   }
 };
 
+
+ASTCompiler.prototype.isLiteral = function(ast) {
+  return ast.body.length === 0 ||
+         ast.body.length === 1 && (
+            ast.body[0].type === AST.Literal ||
+            ast.body[0].type === AST.ArrayExpression ||
+            ast.body[0].type === AST.ObjectExpression
+         );
+};
+
 // =================================================================================
 //                            parse
 // =================================================================================
@@ -872,7 +963,7 @@ Parser.prototype.parse = function(text) {
 };
 
 function parse(expr) {
-  
+
   switch (typeof expr) {
     case 'string':
       var lexer = new Lexer();
@@ -883,7 +974,7 @@ function parse(expr) {
     default:
       return _.noop;
   }
-  
+
 }
 
 

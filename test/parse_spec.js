@@ -697,49 +697,157 @@ describe('parse', function() {
     var fn = parse('"hello" | surround:"*":"!"');
     fn().should.eql('*hello!');
   });
-  
+
   it('return the function itself when given one.', function() {
     var fn = function () {};
     parse(fn).should.be.exactly(fn);
   });
-  
+
   it('still return a function when given no argument', function() {
     parse().should.be.Function();
   });
-  
+
   it('makes integers literal', function() {
     var fn = parse('42');
     fn.literal.should.be.true();
   });
-  
+
   it('make string literal', function() {
     var fn = parse('"abc"');
     fn.literal.should.be.true();
   });
-  
+
   it('marks boolean literal ', function() {
     var fn = parse('true');
     fn.literal.should.be.true();
   });
-  
-  it('mark arrays literal', function() {
+
+  it('marks arrays literal', function() {
     var fn = parse('[1, 2, aVariable]');
     fn.literal.should.be.true;
   });
 
-  it('mark objects literal', function() {
+  it('marks objects literal', function() {
     var fn = parse('{a: 1, b: aVariable}');
     fn.literal.should.be.true;
   });
-  
+
   it('marks unary expressions non-literal.', function() {
     var fn = parse('!false');
     fn.literal.should.be.false();
   });
-  
+
   it('marks binary expressions non-literal', function() {
     var fn = parse('1 + 2');
     fn.literal.should.be.false();
+  });
+
+  it('marks integers constant', function() {
+    var fn = parse('42');
+    fn.constant.should.be.true;
+  });
+
+  it('marks strings constant', function() {
+    var fn = parse('"abc"');
+    fn.constant.should.be.true;
+  });
+
+  it('marks boolean constant', function() {
+    var fn = parse('true');
+    fn.constant.should.be.true;
+  });
+
+  it('marks identifier non-constant', function() {
+    var fn = parse('a');
+    fn.constant.should.be.false();
+  });
+
+  it('marks array constant when element are constant.', function() {
+    parse('[1, 2, 3]').constant.should.be.true();
+    parse('[1, [2, [3]]]').constant.should.be.true();
+    parse('[1, 2, a]').constant.should.be.false();
+    parse('[1, [2, [a]]]').constant.should.be.false();
+  });
+
+  it('marks object constant when values are constant', function() {
+    parse('{a: 1, b: 2}').constant.should.be.true();
+    parse('{a: 1, b: {c: 2}}').constant.should.be.true();
+    parse('{a: 1, b: something}').constant.should.be.false();
+    parse('{a: 1, b: {c: something}}').constant.should.be.false();
+  });
+
+  it('marks this as non-constant', function() {
+    parse('this').constant.should.be.false();
+  });
+  
+  it('marks non-computed lookup constant when object is constant', function() {
+    parse('{a: 1}.a').constant.should.be.true();
+    parse('obj.a').constant.should.be.false();
+  });
+  
+  it('marks computed lookup constant when object and key are', function() {
+    parse('{a: 1}["a"]').constant.should.be.true();
+    parse('obj["a"]').constant.should.be.false();
+    parse('{a: 1}[something]').constant.should.be.false();
+    parse('obj[something]').constant.should.be.false();
+  });
+  
+  it('marks function calls non-constant', function () {
+    parse('aFunction()').constant.should.be.false();
+  });
+  
+  it('marks filters constant if arguments are', function () {
+    register('aFilter', function() {
+      return _.identity;
+    });
+    
+    parse('[1, 2, 3] | aFilter').constant.should.be.true();
+    parse('[1, 2, a] | aFilter').constant.should.be.false();
+    parse('[1, 2, 3] | aFilter:42').constant.should.be.true();
+    parse('[1, 2, 3] | aFilter:a').constant.should.be.false();
+  });
+  
+  it('marks assignments constant when both sides are', function() {
+    parse('1 = 2').constant.should.be.true();
+    parse('a = 2').constant.should.be.false();
+    parse('1 = b').constant.should.be.false();
+    parse('a = b').constant.should.be.false();
+  });
+  
+  it('marks unaries constant when arguments are constant.', function() {
+    parse('+42').constant.should.be.true();
+    parse('+a').constant.should.be.false();
+  });
+  
+  it('marks binaries constant when both arguments are constant.', function() {
+    parse('1 + 2').constant.should.be.true();
+    parse('1 + 2').literal.should.be.false();
+    
+    parse('1 + a').constant.should.be.false();
+    parse('a + 1').constant.should.be.false();
+    parse('a + a').constant.should.be.false();
+  });
+  
+  it('marks logicals constant when both arguments are cosntant.', function() {
+    parse('true && false').constant.should.be.true();
+    parse('true && false').literal.should.be.false();
+    
+    parse('true && a').constant.should.be.false();
+    parse('true && a').literal.should.be.false();
+    
+    parse('a && false').constant.should.be.false();
+    parse('a && false').literal.should.be.false();
+  
+    parse('a && b').constant.should.be.false();
+    parse('a && b').literal.should.be.false();  
+  });
+  
+  it('marks ternaries constant when all arguments are', function() {
+    parse('true ? 1 : 2').constant.should.true();
+    parse('a ? 1: 2').constant.should.be.false();
+    parse('true ? a: 2').constant.should.be.false();
+    parse('true ? 1: b').constant.should.be.false();
+    parse('a ? b: c').constant.should.be.false();
   });
 
 });
