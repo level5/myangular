@@ -40,7 +40,7 @@ function createPredicateFn(expression) {
     return actual.indexOf(expected) !== -1;
   }
 
-  function deepCompare(actual, expected, comparator, matchAnyProperty) {
+  function deepCompare(actual, expected, comparator, matchAnyProperty, inWildcard) {
     if (_.isString(expected) && _.startsWith(expected, '!')) {
       return !deepCompare(actual, expected.substring(1), comparator, matchAnyProperty);
     }
@@ -52,14 +52,16 @@ function createPredicateFn(expression) {
       });
     }
     if (_.isObject(actual)) {
-      if (_.isObject(expected)) {
+      // 这个逻辑暂时没有彻底明白！！！
+      if (_.isObject(expected) && !inWildcard) {
         return _.every(_.toPlainObject(expected), function(expectedVal, expectedKey) {
           if (_.isUndefined(expectedVal)) {
             return true;
           }
           var isWildcard = (expectedKey === '$');
           var actualVal = isWildcard ? actual : actual[expectedKey];
-          return deepCompare(actualVal, expectedVal, comparator, isWildcard);
+          return deepCompare(actualVal, expectedVal, comparator,
+                              isWildcard, isWildcard);
         });
       } else if (matchAnyProperty){
         return _.some(actual, function(value) {

@@ -229,7 +229,7 @@ describe('filter filter', function () {
     ]}).should.eql([
       {name: 'Joe', role: 'admin'},
       {name: 'Jane', role: 'moderator'}
-    ])
+    ]);
   });
 
   it('filtters nested objects with a wildcard property', function() {
@@ -241,7 +241,7 @@ describe('filter filter', function () {
     ]}).should.eql([
       {name: {first: 'Joe'}, role: 'admin'},
       {name: {first: 'Jane'}, role: 'moderator'}
-    ])
+    ]);
   });
 
   it('filtters wildcard properties scoped to parent', function() {
@@ -253,11 +253,24 @@ describe('filter filter', function () {
     ]}).should.eql([
       {name: {first: 'Joe', last: 'Fox'}, role: 'admin'},
       {name: {first: 'mary', last: 'Brown'}, role: 'admin'}
-    ])
+    ]);
   });
 
   it('filters primitives with a wildcard property', function() {
     var fn = parse('arr | filter: {$:"o"}');
     fn({arr: ['Joe', 'Jane', 'Mary']}).should.eql(['Joe']);
   });
+
+  it('filters with a nested wildcard property.', function() {
+    var fn = parse('arr | filter: {$:{$:"o"}}');
+    fn({arr: [
+      {name: {first: 'Joe'}, role: 'admin'},
+      {name: {first: 'Jane'}, role: 'moderator'},
+      {name: {first: 'Mary'}, role: 'admin'}
+    ]}).should.eql([
+      {name: {first: 'Joe'}, role: 'admin'}
+    ]);
+  });
+
+
 });
