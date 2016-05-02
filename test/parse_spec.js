@@ -849,5 +849,23 @@ describe('parse', function() {
     parse('true ? 1: b').constant.should.be.false();
     parse('a ? b: c').constant.should.be.false();
   });
+  
+  it('allows calling assign on identifier expressions.', function () {
+    var fn = parse('anAttribute');
+    fn.assign.should.not.be.undefined();
+    
+    var scope = {};
+    fn.assign(scope, 42);
+    scope.anAttribute.should.eql(42);
+  });
+  
+  it('allows calling assign on member expressions.', function() {
+    var fn = parse('anObject.anAttribute');
+    fn.assign.should.not.be.undefined();
+    
+    var scope = {};
+    fn.assign(scope, 42);
+    scope.anObject.should.eql({anAttribute: 42});
+  });
 
 });

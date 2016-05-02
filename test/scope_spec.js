@@ -4,6 +4,8 @@ var Scope = require('../src/scope');
 var sinon = require('sinon');
 var _ = require('lodash');
 
+var register = require('../src/filter').register;
+
 
 describe('Scope', function() {
 
@@ -762,6 +764,132 @@ describe('Scope', function() {
         called.should.be.true();
         done();
       });
+    });
+    
+    it('removes constant watchers after first invocation.', function () {
+      scope.$watch('[1, 2, 3]', function() {});
+      scope.$digest();
+      scope.$$watchers.length.should.eql(0);
+    });
+    
+    it('accepts one-time watches', function () {
+      var theValue;
+      
+      scope.aValue = 42;
+      scope.$watch('::aValue', function(newValue, oldValue, scope) {
+        theValue = newValue;
+      });
+      scope.$digest();
+      theValue.should.eql(42);
+    });
+    
+    it('removes on-time watch after first invocation', function() {
+      scope.aValue = 42;
+      scope.$watch('::aValue', function() {});
+      
+      scope.$digest();
+      
+      scope.$$watchers.length.should.eql(0);
+    });
+    
+    it('does not remove one-time-watches until value is defined', function() {
+      scope.$watch('::aValue', function() {});
+      
+      scope.$digest();
+      scope.$$watchers.length.should.eql(1)
+      
+      scope.aValue = 42;
+      scope.$digest();
+      scope.$$watchers.length.should.eql(0);
+      
+    });
+    
+    it('does not remove one-time-watches until value stays defined.', function() {
+      
+      scope.aValue = 42;
+      scope.$watch('::aValue', function() {});
+      var unwatchDeleter = scope.$watch('aValue', function() {
+        delete scope.aValue;
+      });
+      
+      scope.$digest();
+      scope.$$watchers.length.should.eql(2);
+      
+      scope.aValue = 42;
+      unwatchDeleter();
+      scope.$digest();
+      scope.$$watchers.length.should.eql(0);
+    });
+    
+    it('does not remove one-time watches before all array items defined.', function() {
+      scope.$watch('::[1, 2, aValue]', function(){}, true);
+      scope.$digest();
+      scope.$$watchers.length.should.eql(1);
+      
+      scope.aValue = 3;
+      scope.$digest();
+      scope.$$watchers.length.should.eql(0);
+            
+    });
+    
+    it('does not remove one-time watches before all object vals defined.', function() {
+      scope.$watch('::{a: 1, b: aValue}', function() {}, true);
+      scope.$digest();
+      scope.$$watchers.length.should.eql(1);
+      
+      scope.aValue = 3;
+      scope.$digest();
+      scope.$$watchers.length.should.eql(0);
+    });
+    
+    // Input Track Optimization
+    it('does not re-evaluate an array if it contents do not change.', function() {
+      var values = [];
+      
+      scope.a = 1;
+      scope.b = 2;
+      scope.c = 3;
+      
+      scope.$watch('[a, b, c]', function(value) {
+        values.push(value);
+      });
+      
+      scope.$digest();
+      values.length.should.eql(1);
+      values[0].should.eql([1, 2, 3]);
+      
+      scope.$digest();
+      values.length.should.eql(1);
+      
+      scope.c = 4;
+      scope.$digest();
+      values.length.should.eql(2);
+      values[1].should.eql([1, 2, 4]);
+    });
+    
+    it('allows $stateful filter value to change over time.', function(done) {
+      
+      register('withTime', function() {
+        // 返回的filter带了一个叫做$stateful的属性
+        return _.extend(function(v) {
+          return new Date().toISOString() + ': ' + v;
+        }, {
+          $stateful: true
+        });
+      });
+      
+      var listenerSpy = sinon.spy();
+      scope.$watch('42 | withTime', listenerSpy);
+      scope.$digest();
+      
+      var firstValue = listenerSpy.lastCall.args[0];
+      
+      setTimeout(function() {
+        scope.$digest();
+        var secondValue = listenerSpy.lastCall.args[0];
+        secondValue.should.not.eql(firstValue);
+        done();
+      }, 100);
     });
 
   });
