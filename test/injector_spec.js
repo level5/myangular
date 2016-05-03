@@ -117,4 +117,78 @@ describe('injector', function() {
     
   });
   
+  it('invokes a function with the given this context', function () {
+    var module = window.angular.module('myModule', []);
+    module.constant('a', 1);
+    var injector = createInjector(['myModule']);
+    
+    var obj = {
+      two: 2,
+      fn: function (one) {
+        return one + this.two;
+      }
+    };
+    obj.fn.$inject = ['a'];
+    
+    injector.invoke(obj.fn, obj).should.eql(3);
+  });
+  
+  it('overrides dependencies with locals when invoking', function () {
+    var module = window.angular.module('myModule', []);
+    module.constant('a', 1);
+    module.constant('b', 2);
+    
+    var injector = createInjector(['myModule']);
+    
+    var fn = function(one, two) { return one + two; };
+    fn.$inject = ['a', 'b'];
+    
+    injector.invoke(fn, undefined, {b:3}).should.eql(4);
+  });
+  
+  describe('annotate', function() {
+    
+    it('returns the $inject annotation of a function when it has one.', function() {
+      var injector = createInjector([]);
+      
+      var fn = function() {};
+      fn.$inject = ['a', 'b'];
+      
+      injector.annotate(fn).should.eql(['a', 'b']);
+    });
+    
+    it('returns the array-style annotation of a function.', function() {
+      var injector = createInjector([]);
+      
+      var fn = ['a', 'b', function() {}];
+      
+      injector.annotate(fn).should.eql(['a', 'b']);
+    });
+    
+    it('returns an empty array for a non-annotated 0-arg function.', function() {
+      
+      var injector = createInjector([]);
+      var fn = function() {};
+      
+      injector.annotate(fn).should.eql([]);
+    });
+    
+    it('returns annotations parsed from function args when not annotated.', function() {
+      var injector = createInjector([]);
+      var fn = function(a, b) {};
+      
+      injector.annotate(fn).should.eql(['a', 'b']);
+    });
+    
+    it('strips comments from argument list when parsing', function() {
+      
+      var injector = createInjector([]);
+      
+      var fn = function(a, /*b, */ c) {};
+      
+      injector.annotate(fn).should.eql(['a', 'c']);
+    });
+    
+  });
+  
 });

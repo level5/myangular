@@ -2,6 +2,11 @@
 
 var _ = require('lodash');
 
+
+var FN_ARGS = /^function\s*[^\(]*\(\s*([^\)]*)\)/m;
+var FN_ARG = /^\s*(\S+)\s*$/;
+var STRIP_COMMENTS = /\/\*.*\*\//;
+
 function createInjector(modulesToLoad) {
   
   var cache = {};
@@ -16,15 +21,33 @@ function createInjector(modulesToLoad) {
     }
   };
   
-  function invoke(fn) {
+  function invoke(fn, self, locals) {
     var args = _.map(fn.$inject, function(token) {
       if (_.isString(token)) {
-        return cache[token];
+        return (locals && locals.hasOwnProperty(token)) ? 
+                locals[token] : 
+                cache[token];
       } else {
         throw 'Incorrect injection token! Expected a string, got' + token;
       }
     });
-    return fn.apply(null, args);
+    return fn.apply(self, args);
+  }
+  
+  function annotate(fn) {
+    if (_.isArray(fn)) {
+      return fn.slice(0, fn.length - 1);
+    } else if (fn.$inject) {
+      return fn.$inject;
+    } else if (!fn.length) {
+      return [];
+    } else {
+      var source = fn.toString().replace(STRIP_COMMENTS, '');
+      var argDeclaration = source.match(FN_ARGS);
+      return _.map(argDeclaration[1].split(','), function(argName) {
+        return argName.match(FN_ARG)[1];
+      });
+    }
   }
   
   _.forEach(modulesToLoad, function loadModule(moduleName) {
@@ -47,7 +70,8 @@ function createInjector(modulesToLoad) {
     get: function (key) {
       return cache[key];
     },
-    invoke: invoke
+    invoke: invoke,
+    annotate: annotate
   };
 }
 
