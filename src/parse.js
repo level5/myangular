@@ -618,9 +618,6 @@ ASTCompiler.prototype.compile = function(text) {
   fn.literal = this.isLiteral(ast);
   fn.constant = ast.constant;
   
-  _.forEach(fn.inputs, function(fn) {
-    console.log(fn.toString());
-  });
   return fn;
 };
 
@@ -1212,7 +1209,6 @@ function inputsWatchDelegate(scope, listenerFn, valueEq, watchFn) {
         oldValues[i] = newValue;
       }
     });
-    console.log(changed);
     if (changed) {
       lastResult = watchFn(scope);
     }  
