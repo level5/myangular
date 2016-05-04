@@ -349,6 +349,169 @@ describe('injector', function() {
       injector.get('b').should.eql(3);
     });
     
+    it('instantiates a dependency only once.', function () {
+      var module = window.angular.module('myModule', []);
+      module.provider('a', { $get: function() {return {};} });
+      
+      var injector = createInjector(['myModule']);
+      
+      injector.get('a').should.be.exactly(injector.get('a'));
+    });
+    
+    it('notifies the user about a circular dependency', function () {
+      var module = window.angular.module('myModule', []);
+      module.provider('a', { $get: function(b) {} });
+      module.provider('b', { $get: function(c) {} });
+      module.provider('c', { $get: function(a) {} });
+      
+      var injector = createInjector(['myModule']);
+      (function() {
+        injector.get('a');
+      }).should.throw(/Circular dependency found/);
+    });
+    
+    it('cleans up the circular marker when instantiation fails.', function() {
+      var module = window.angular.module('myModule', []);
+      module.provider('a', { $get: function() {
+        throw new Error('Failing instantiation!');  
+      }});
+      
+      var injector = createInjector(['myModule']);
+      
+      (function() {
+        injector.get('a');
+      }).should.throw('Failing instantiation!');
+      
+      (function() {
+        injector.get('a');
+      }).should.throw('Failing instantiation!');
+      
+    });
+    
+    it('notifies the user about a circular dependency', function () {
+      var module = window.angular.module('myModule', []);
+      module.provider('a', { $get: function(b) {} });
+      module.provider('b', { $get: function(c) {} });
+      module.provider('c', { $get: function(a) {} });
+      
+      var injector = createInjector(['myModule']);
+      (function() {
+        injector.get('a');
+      }).should.throw('Circular dependency found: a <- c <- b <- a');
+    });
+    
+    it('instantiates a provider if given as a constructor function.', function () {
+      var module = window.angular.module('myModule', []);
+      
+      module.provider('a', function AProvider() {
+        this.$get = function () {return 42;};
+      })
+      
+      var injector = createInjector(['myModule']);
+      injector.get('a').should.eql(42);
+    });
+     
+    it('injects the given provider constructor function.', function () {
+      var module = window.angular.module('myModule', []);
+      
+      module.constant('b', 2);
+      module.provider('a', function AProvider(b) {
+        this.$get = function () {return 1 + b};
+      })
+      
+      var injector = createInjector(['myModule']);
+      injector.get('a').should.eql(3);
+    });   
+    
+    it('injects another provider to a provider constructor function', function () {
+      var module = window.angular.module('myModule', []);
+      
+      module.provider('a', function AProvider() {
+        var value = 1;
+        this.setValue = function(v) { value = v;};
+        this.$get = function() {return value;};
+      });
+      
+      module.provider('b', function BProvider(aProvider) {
+        aProvider.setValue(2);
+        this.$get = function () {};
+      });
+      
+      var injector = createInjector(['myModule']);
+      injector.get('a').should.eql(2);
+      
+    });
+    
+    it('does not inject an instance to a provider constructor function', function () {
+      
+      var module = window.angular.module('myModule', []);
+      
+      module.provider('a', function AProvider() {
+        this.$get = function() {return 1;};
+      });
+      
+      module.provider('b', function BProvider(a) {
+        this.$get = function() {return a;};
+      });
+      
+      (function () {
+        createInjector(['myModule']);
+      }).should.throw();
+      
+    });
+    
+    it('does not inject a provider to a $get function.', function () {
+      
+      var module = window.angular.module('myModule', []);
+      
+      module.provider('a', function AProvider() {
+        this.$get = function() {return 1;};
+      });
+      
+       module.provider('b', function BProvider() {
+        this.$get = function(aProvider) {return aProvider.$get();};
+      });
+      
+      createInjector(['myModule']);
+      (function () {
+        injector.get('b');
+      }).should.throw();         
+    });
+    
+    it('does not inject a provider to invoke', function () {
+      var module = window.angular.module('myModule', []);
+      module.provider('a', function AProvider() {
+        this.$get = function() {return 1;};
+      }); 
+      var injector = createInjector(['myModule']);
+      (function () {
+        injector.invoke(function(aProvider) {});
+      }).should.throw();       
+    });
+      
+    it('does not give access to provider through get', function () {
+      var module = window.angular.module('myModule', []);
+      module.provider('a', function AProvider() {
+        this.$get = function() {return 1;};
+      }); 
+      var injector = createInjector(['myModule']);
+      (function () {
+        injector.get('aProvider');
+      }).should.throw();       
+    });  
+    
+    it('registers constans first to make them avaliable to providers', function() {
+      var module = window.angular.module('myModule', []);
+      
+      module.provider('a', function AProvider(b) {
+        this.$get = function() {return b;};
+      });
+      
+      module.constant('b', 42);
+      
+      var injector = createInjector(['myModule']);
+      injector.get('a').should.eql(42);
+    });
   });
   
   
