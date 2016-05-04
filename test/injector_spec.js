@@ -310,6 +310,11 @@ describe('injector', function() {
       instance.result.should.eql(4);
     });
     
+    it('allows registering a provider and uses its $get', function () {
+      var module = window.angular.module('myModule', []);
+    });
+    
   });
+  
   
 });
