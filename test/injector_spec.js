@@ -515,4 +515,20 @@ describe('injector', function() {
   });
   
   
+  it('allows injecting the instance injector to $get', function() {
+    
+    var module = window.angular.module('myModule', []);
+    module.constant('a', 42);
+    module.provider('b', function BProvider() {
+      this.$get = function ($injector) {
+        return $injector.get('a');
+      };
+    });
+    
+    var injector = createInjector(['myModule']);
+    
+    injector.get('b').should.eql(42);
+  });
+  
+  
 });
