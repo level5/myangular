@@ -530,5 +530,69 @@ describe('injector', function() {
     injector.get('b').should.eql(42);
   });
   
+  it('allows injecting the provider injector to provider.', function() {
+    
+    var module = window.angular.module('myModule', []);
+    module.provider('a', function AProvider() {
+      this.value = 42;
+      this.$get = function() {return this.value;};
+    });
+    module.provider('b', function BProvider($injector) {
+      var aProvider = $injector.get('aProvider');
+      this.$get = function() {
+        return aProvider.value;
+      }
+    });
+    
+    var injector = createInjector(['myModule']);
+    injector.get('b').should.eql(42);
+  });
+  
+  it('allows injecting the $provider service to providers', function () {
+    var module = window.angular.module('myModule', []);
+    
+    module.provider('a', function AProvider($provide) {
+      $provide.constant('b', 2);
+      this.$get = function(b) { return 1 + b;};
+    });
+    
+    var injector = createInjector(['myModule']);
+    injector.get('a').should.eql(3);
+  });
+  
+  it('does not allow injecting the $provider service to $get', function () {
+    var module = window.angular.module('myModule', []);
+    
+    module.provider('a', function AProvider() {
+      this.$get = function($provide) {};
+    });
+    
+    var injector = createInjector(['myModule']);
+    (function () {
+      injector.get('a');
+    }).should.throw();
+  });
+  
+  it('runs config blocks when the injector is created.', function() {
+    var module = window.angular.module('myModule', []);
+    
+    var hasRun = false;
+    module.config(function() {
+      hasRun = true;
+    });
+    
+    createInjector(['myModule']);
+    hasRun.should.be.true();
+  });
+  
+  it('inject config blocks with provider injector', function() {
+    var module = window.angular.module('myModule', []);
+    module.config(function($provide) {
+      $provide.constant('a', 42);
+    });
+    
+    var injector = createInjector(['myModule']);
+    injector.get('a').should.eql(42);
+  });
   
 });
