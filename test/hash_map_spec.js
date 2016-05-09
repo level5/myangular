@@ -4,6 +4,7 @@ var sinon = require('sinon');
 var _ = require('lodash');
 
 var hashKey = require('../src/hash_map').hashKey;
+var HashMap = require('../src/hash_map').HashMap;
 
 describe('hash', function () {
   
@@ -90,11 +91,39 @@ describe('hash', function () {
     });
     
     it('calls the function $$hashKey as a method with the correct this.', function () {
-      
+      hashKey({
+        myKey: 42,
+        $$hashKey: function () {
+          return this.myKey;
+        }
+      }).should.eql('object:42');
     });
         
   });
   
-  
+  describe('HashMap', function () {
+    
+    it('supports put and get of primitives.', function () {
+      var map = new HashMap();
+      map.put(42, 'fourty two');
+      map.get(42).should.eql('fourty two');
+    });
+    
+    it('supports put and get of objects with hashKey semantics.', function () {
+      var map = new HashMap();
+      var obj = {};
+      map.put(obj, 'my value');
+      map.get(obj).should.eql('my value')
+      should(map.get({})).be.undefined();
+    });
+    
+    it('supports remove', function () {
+      var map = new HashMap();
+      map.put(42, 'fourty two');
+      map.remove(42);
+      should(map.get(42)).be.undefined();
+    });
+    
+  });
   
 });

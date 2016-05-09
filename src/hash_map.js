@@ -9,7 +9,9 @@ function hashKey(value) {
   if (type === 'function' ||
       (type === 'object' && value !== null)) {
     uid = value.$$hashKey;      
-    if (uid === undefined) {
+    if (typeof uid === 'function') {
+      uid = value.$$hashKey();
+    } else if (uid === undefined) {
       uid = value.$$hashKey = _.uniqueId();
     }
   } else {
@@ -18,6 +20,20 @@ function hashKey(value) {
   return type + ':' + uid;
 }
 
-module.exports= {
-  hashKey: hashKey
+function HashMap() {
+  
+}
+
+HashMap.prototype = {
+  put: function (key, value) {
+    this[hashKey(key)] = value;
+  },
+  get: function (key) {
+    return this[hashKey(key)];
+  }
+}
+
+module.exports = {
+  hashKey: hashKey,
+  HashMap: HashMap
 };
