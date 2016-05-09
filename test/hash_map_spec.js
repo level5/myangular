@@ -124,6 +124,12 @@ describe('hash', function () {
       should(map.get(42)).be.undefined();
     });
     
+    it('returns value from remove', function () {
+      var map = new HashMap();
+      map.put(42, 'fourty two');
+      map.remove(42).should.eql('fourty two');
+    });
+    
   });
   
 });

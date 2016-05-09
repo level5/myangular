@@ -710,4 +710,29 @@ describe('injector', function() {
     loadedTimes.should.eql(1);
   });
   
+  it('allows registering a factory', function () {
+    var module = window.angular.module('myModule', []);
+    module.factory('a', function() { return 42; });
+    var injector = createInjector(['myModule']);
+    injector.get('a').should.eql(42);
+  });
+  
+  it('injects a factory function with instances', function () {
+    var module = window.angular.module('myModule', []);
+    
+    module.factory('a', function() {return 1;});
+    module.factory('b', function (a) { return a + 2;});
+    
+    var injector = createInjector(['myModule']);
+    injector.get('b').should.eql(3);
+  });
+  
+  it('only calls a factory function once.', function () {
+    var module = window.angular.module('myModule', []);
+    module.factory('a', function() { return {}; });
+    
+    var injector = createInjector(['myModule']);
+    injector.get('a').should.eql(injector.get('a'));
+  });
+  
 });
