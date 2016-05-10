@@ -6,11 +6,22 @@ var _ = require('lodash');
 var filter = require('../src/filter').filter;
 var parse = require('../src/parse');
 
+var publishExternalAPI = require('../src/angular_public');
+var createInjector = require('../src/injector');
+
 
 describe('filter filter', function () {
+  
+  var parse;
+  
+  beforeEach(function() {
+    publishExternalAPI();
+    parse = createInjector(['ng']).get('$parse');
+  });
 
   it('is avaliable', function() {
-    filter('filter').should.be.a.Function();
+    var injector = createInjector(['ng']);
+    injector.has('filterFilter').should.be.true();
   });
 
 

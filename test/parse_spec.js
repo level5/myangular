@@ -3,10 +3,17 @@
 var sinon = require('sinon');
 var _ = require('lodash');
 
-var parse = require('../src/parse');
-var register = require('../src/filter').register;
+var publishExternalAPI = require('../src/angular_public');
+var createInjector = require('../src/injector');
 
 describe('parse', function() {
+  
+  var parse;
+  
+  beforeEach(function() {
+    publishExternalAPI();
+    parse = createInjector(['ng']).get('$parse');
+  });
 
   it('can parse an integer.', function() {
     var fn = parse('42');
@@ -649,50 +656,58 @@ describe('parse', function() {
   });
 
   it('can parse filter expressions', function() {
-    register('upcase', function () {
-      return function (str) {
-        return str.toUpperCase();
-      };
-    });
+    parse = createInjector(['ng', function($filterProvider) {
+      $filterProvider.register('upcase', function () {
+        return function (str) {
+          return str.toUpperCase();
+        };
+      });
+    }]).get('$parse');
 
     var fn = parse('aString | upcase');
     fn({aString: 'Hello'}).should.eql('HELLO');
   });
 
   it('can parse filter chain expression.', function() {
-    register('upcase', function() {
-      return function(s) {
-        return s.toUpperCase();
-      };
-    });
+    parse = createInjector(['ng', function($filterProvider) {
+      $filterProvider.register('upcase', function() {
+        return function(s) {
+          return s.toUpperCase();
+        };
+      });
+      $filterProvider.register('exclamate', function() {
+        return function(s) {
+          return s + '!';
+        };
+      });
+    }]).get('$parse');
 
-    register('exclamate', function() {
-      return function(s) {
-        return s + '!';
-      };
-    });
 
     var fn = parse('"hello" | upcase | exclamate');
     fn().should.eql('HELLO!');
   });
 
   it('can parse an additional arugment to filter', function() {
-    register('repeat', function() {
-      return function (s, times) {
-        return _.repeat(s, times);
-      };
-    });
-
+    parse = createInjector(['ng', function($filterProvider) {
+      $filterProvider.register('repeat', function() {
+        return function (s, times) {
+          return _.repeat(s, times);
+        };
+      });
+    }]).get('$parse');
+    
     var fn = parse('"hello" | repeat:3');
     fn().should.eql('hellohellohello');
   });
 
   it('can parse serveral additional arguments to filter.', function () {
-    register('surround', function () {
-      return function(s, left, right) {
-        return left + s + right;
-      };
-    });
+    parse = createInjector(['ng', function($filterProvider) {
+      $filterProvider.register('surround', function () {
+        return function(s, left, right) {
+          return left + s + right;
+        };
+     });
+    }]).get('$parse');
 
     var fn = parse('"hello" | surround:"*":"!"');
     fn().should.eql('*hello!');
@@ -797,9 +812,11 @@ describe('parse', function() {
   });
   
   it('marks filters constant if arguments are', function () {
-    register('aFilter', function() {
-      return _.identity;
-    });
+    parse = createInjector(['ng', function ($filterProvider) {
+      $filterProvider.register('aFilter', function() {
+        return _.identity;
+      });
+    }]).get('$parse');
     
     parse('[1, 2, 3] | aFilter').constant.should.be.true();
     parse('[1, 2, a] | aFilter').constant.should.be.false();
