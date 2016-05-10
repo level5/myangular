@@ -735,4 +735,48 @@ describe('injector', function() {
     injector.get('a').should.eql(injector.get('a'));
   });
   
+  it('forces a factory to return a value.', function () {
+    var module = window.angular.module('myModule', []);
+    
+    module.factory('a', function () {});
+    module.factory('b', function () {return null;});
+    
+    var injector = createInjector(['myModule']);
+    
+    (function () {
+      injector.get('a');
+    }).should.throw();
+    
+    should(injector.get('b')).be.null();
+    
+  });
+  
+  it('allows registering a vlaue.', function () {
+    var module = window.angular.module('myModule', []);
+    module.value('a', 42);
+    var injector = createInjector(['myModule']);
+    injector.get('a').should.eql(42);
+  });
+  
+  it('does not make values avaliable to config blocks', function () {
+    var module = window.angular.module('myModule', []);
+    
+    module.value('a', 42);
+    module.config(function(a){});
+    
+    (function() {
+      createInjector(['myModule']);
+    }).should.throw();
+  });
+  
+  it('allows an undefined value.', function () {
+    var module = window.angular.module('myModule', []);
+    
+    module.value('a', undefined);
+    
+    var injector = createInjector(['myModule']);
+    
+    should(injector.get(a)).be.undefined();
+  });
+  
 });

@@ -100,6 +100,17 @@ function createInjector(modulesToLoad, strictDi) {
   var path = [];
   strictDi = (strictDi === true);
   
+  
+  function enforceReturnValue(factoryFn) {
+    return function () {
+      var value = instanceInjector.invoke(factoryFn);
+      if (_.isUndefined(value)) {
+        throw 'factory must return a value';
+      }
+      return value;
+    }
+  }
+  
   providerCache.$provide = {
     constant: function(key, value) {
       if (key === 'hasOwnProperty') {
@@ -115,7 +126,10 @@ function createInjector(modulesToLoad, strictDi) {
       providerCache[key + 'Provider'] = provider;
     },
     factory: function(key, factoryFn) {
-      this.provider(key, { $get: factoryFn });
+      this.provider(key, { $get: enforceReturnValue(factoryFn) });
+    },
+    value: function(key, value) {
+      this.factory(key, _.constant(value));
     }
   };
   
