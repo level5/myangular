@@ -42,4 +42,11 @@ describe('angularPublic', function () {
   });
  
   
+  it('sets up the $q', function () {
+    publishExternalAPI();
+    var injector = createInjector(['ng']);
+    injector.has('$q').should.be.true();
+  });
+ 
+  
 });
