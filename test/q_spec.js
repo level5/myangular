@@ -36,7 +36,7 @@ describe('$q', function () {
     deferred.resolve('a-ok');
     
     setTimeout(function () {
-      promiseSpy.calledWith('a-ok');
+      promiseSpy.calledWith('a-ok').should.be.true();;
       done();
     }, 1);
     
@@ -50,7 +50,7 @@ describe('$q', function () {
     d.promise.then(promiseSpy);
     
     setTimeout(function () {
-      promiseSpy.calledWith(42);
+      promiseSpy.calledWith(42).should.be.true();;
       done();
     }, 0);
   });
@@ -75,7 +75,7 @@ describe('$q', function () {
     d.resolve(42);
     $rootScope.$apply();
     
-    promiseSpy.calledWith(42);
+    promiseSpy.calledWith(42).should.be.true();;
   });
   
   it('may only be resolved once', function() {
@@ -90,7 +90,7 @@ describe('$q', function () {
     $rootScope.$apply()
     
     promiseSpy.callCount.should.eql(1);
-    promiseSpy.calledWith(42);
+    promiseSpy.calledWith(42).should.be.true();;
   });
   
   it('may only ever be resolved once', function() {
@@ -101,7 +101,7 @@ describe('$q', function () {
     
     d.resolve(42);
     $rootScope.$apply();
-    promiseSpy.calledWith(42);
+    promiseSpy.calledWith(42).should.be.true();;
     
     d.resolve(43);
     $rootScope.$apply();
@@ -118,7 +118,7 @@ describe('$q', function () {
     d.promise.then(promiseSpy);
     $rootScope.$apply();
     
-    promiseSpy.calledWith(42);
+    promiseSpy.calledWith(42).should.be.true();
     
   });
   
@@ -134,8 +134,116 @@ describe('$q', function () {
     d.resolve(42);
     $rootScope.$apply();
     
-    firstSpy.calledWith(42);
-    secondSpy.calledWith(42);
+    firstSpy.calledWith(42).should.be.true();;
+    secondSpy.calledWith(42).should.be.true();;
+  });
+  
+  it('invokes callbacks once', function() {
+    var d = $q.defer();
+    
+    var firstSpy = sinon.spy();
+    var secondSpy = sinon.spy();
+    
+    d.promise.then(firstSpy);
+    d.resolve(42);
+    $rootScope.$apply();
+    firstSpy.callCount.should.eql(1);
+    secondSpy.callCount.should.eql(0);
+    
+    d.promise.then(secondSpy);
+    firstSpy.callCount.should.eql(1);
+    secondSpy.callCount.should.eql(0);
+    
+    $rootScope.$apply();
+    firstSpy.callCount.should.eql(1);
+    secondSpy.callCount.should.eql(1);
+    
+  });
+  
+  
+  it('can reject a deferred', function () {
+    var d = $q.defer();
+    var fulfillSpy = sinon.spy();
+    var rejectSpy = sinon.spy();
+    
+    d.promise.then(fulfillSpy, rejectSpy);
+    
+    d.reject('fail');
+    $rootScope.$apply();
+    
+    fulfillSpy.called.should.be.false();
+    rejectSpy.calledWith('fail').should.be.true();
+    
+  });
+  
+  it('can reject just once', function () {
+    var d = $q.defer();
+    
+    var rejectSpy = sinon.spy();
+    d.promise.then(null, rejectSpy);
+    
+    d.reject('fail');
+    $rootScope.$apply();
+
+    rejectSpy.callCount.should.eql(1);
+    
+    d.reject('fail again');
+    $rootScope.$apply();
+    rejectSpy.callCount.should.eql(1);
+        
+  });
+  
+  it('cannot fulfill a promise once rejected.', function () {
+    var d = $q.defer();
+    
+    var fulfillSpy = sinon.spy();
+    var rejectSpy = sinon.spy();
+    
+    d.promise.then(fulfillSpy, rejectSpy);
+    
+    d.reject('fail');
+    $rootScope.$apply();
+    
+    d.resolve('success');
+    $rootScope.$apply();
+    
+    fulfillSpy.called.should.be.false();
+    
+  });
+  
+  it('does not require a failure handler each time.', function () {
+    var d = $q.defer();
+    
+    var fulfillSpy = sinon.spy();
+    var rejectSpy = sinon.spy();
+    
+    d.promise.then(fulfillSpy);
+    d.promise.then(null, rejectSpy);
+    
+    d.reject('fail');
+    $rootScope.$apply();
+    
+    rejectSpy.calledWith('fail').should.be.true();
+    
+  });
+  
+  it('does not require a success handler each time.', function () {
+    var d = $q.defer();
+    
+    var fulfillSpy = sinon.spy();
+    var rejectSpy = sinon.spy();
+    
+    d.promise.then(fulfillSpy);
+    d.promise.then(null, rejectSpy);
+
+    d.resolve('ok');    
+    $rootScope.$apply();
+    
+    fulfillSpy.calledWith('ok').should.be.true();
+  });
+  
+  it('can register rejection handler with catch.', function () {
+    
   });
   
 });
