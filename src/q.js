@@ -24,10 +24,14 @@ function $QProvider() {
       return this.then(null, onRejected);
     };
     Promise.prototype.finally = function (callback) {
-      return this.then(function () {
+      return this.then(function (value) {
         callback();
-      }, function () {
+        return value;
+      }, function (rejection) {
+        var d = new Deferred();
+        d.reject(rejection);
         callback();
+        return d.promise;
       })
     }
     
@@ -38,10 +42,16 @@ function $QProvider() {
       if (this.promise.$$state.status) {
         return;
       }
-      this.promise.$$state.value = value;
-      this.promise.$$state.status = 1;
-      scheduleProcessQueue(this.promise.$$state);
-      // this.promise.$$state.pending(value);
+      if (value && _.isFunction(value.then)) {
+        value.then(
+          _.bind(this.resolve, this),
+          _.bind(this.reject, this)
+        );
+      } else {
+        this.promise.$$state.value = value;
+        this.promise.$$state.status = 1;
+        scheduleProcessQueue(this.promise.$$state);
+      }
     };
     Deferred.prototype.reject = function (reason) {
       if (this.promise.$$state.status) {

@@ -164,43 +164,43 @@ describe('$q', function () {
   
   it('can reject a deferred', function () {
     var d = $q.defer();
-    var fulfillSpy = sinon.spy();
-    var rejectSpy = sinon.spy();
+    var fulfilledSpy = sinon.spy();
+    var rejectedSpy = sinon.spy();
     
-    d.promise.then(fulfillSpy, rejectSpy);
+    d.promise.then(fulfilledSpy, rejectedSpy);
     
     d.reject('fail');
     $rootScope.$apply();
     
-    fulfillSpy.called.should.be.false();
-    rejectSpy.calledWith('fail').should.be.true();
+    fulfilledSpy.called.should.be.false();
+    rejectedSpy.calledWith('fail').should.be.true();
     
   });
   
   it('can reject just once', function () {
     var d = $q.defer();
     
-    var rejectSpy = sinon.spy();
-    d.promise.then(null, rejectSpy);
+    var rejectedSpy = sinon.spy();
+    d.promise.then(null, rejectedSpy);
     
     d.reject('fail');
     $rootScope.$apply();
 
-    rejectSpy.callCount.should.eql(1);
+    rejectedSpy.callCount.should.eql(1);
     
     d.reject('fail again');
     $rootScope.$apply();
-    rejectSpy.callCount.should.eql(1);
+    rejectedSpy.callCount.should.eql(1);
         
   });
   
   it('cannot fulfill a promise once rejected.', function () {
     var d = $q.defer();
     
-    var fulfillSpy = sinon.spy();
-    var rejectSpy = sinon.spy();
+    var fulfilledSpy = sinon.spy();
+    var rejectedSpy = sinon.spy();
     
-    d.promise.then(fulfillSpy, rejectSpy);
+    d.promise.then(fulfilledSpy, rejectedSpy);
     
     d.reject('fail');
     $rootScope.$apply();
@@ -208,50 +208,50 @@ describe('$q', function () {
     d.resolve('success');
     $rootScope.$apply();
     
-    fulfillSpy.called.should.be.false();
+    fulfilledSpy.called.should.be.false();
     
   });
   
   it('does not require a failure handler each time.', function () {
     var d = $q.defer();
     
-    var fulfillSpy = sinon.spy();
-    var rejectSpy = sinon.spy();
+    var fulfilledSpy = sinon.spy();
+    var rejectedSpy = sinon.spy();
     
-    d.promise.then(fulfillSpy);
-    d.promise.then(null, rejectSpy);
+    d.promise.then(fulfilledSpy);
+    d.promise.then(null, rejectedSpy);
     
     d.reject('fail');
     $rootScope.$apply();
     
-    rejectSpy.calledWith('fail').should.be.true();
+    rejectedSpy.calledWith('fail').should.be.true();
     
   });
   
   it('does not require a success handler each time.', function () {
     var d = $q.defer();
     
-    var fulfillSpy = sinon.spy();
-    var rejectSpy = sinon.spy();
+    var fulfilledSpy = sinon.spy();
+    var rejectedSpy = sinon.spy();
     
-    d.promise.then(fulfillSpy);
-    d.promise.then(null, rejectSpy);
+    d.promise.then(fulfilledSpy);
+    d.promise.then(null, rejectedSpy);
 
     d.resolve('ok');    
     $rootScope.$apply();
     
-    fulfillSpy.calledWith('ok').should.be.true();
+    fulfilledSpy.calledWith('ok').should.be.true();
   });
   
   it('can register rejection handler with catch.', function () {
     var d = $q.defer();
     
-    var rejectSpy = sinon.spy();
-    d.promise.catch(rejectSpy);
+    var rejectedSpy = sinon.spy();
+    d.promise.catch(rejectedSpy);
     d.reject('fail');
     $rootScope.$apply();
     
-    rejectSpy.called.should.be.true();
+    rejectedSpy.called.should.be.true();
   });
   
   it('invokes a finally handler when fulfilled', function() {
@@ -386,4 +386,134 @@ describe('$q', function () {
     rejectedSpy.called.should.be.false();
     
   });
+  
+  it('waits on promise returned from handler', function () {
+    var d = $q.defer();
+    var fulfilledSpy = sinon.spy();
+    
+    d.promise.then(function (v) {
+      var d2 = $q.defer();
+      d2.resolve(v+1);
+      return d2.promise;
+    }).then(function (v) {
+      return v * 2;
+    }).then(fulfilledSpy);
+    
+    d.resolve(20);
+    $rootScope.$apply();
+    fulfilledSpy.calledWithExactly(42).should.be.true();
+  });
+  
+  it('waits on promise given to resolve', function () {
+    var d = $q.defer();
+    var d2 = $q.defer();
+    
+    var fulfilledSpy = sinon.spy();
+    
+    d.promise.then(fulfilledSpy);
+    d2.resolve(42);
+    d.resolve(d2.promise);
+    
+    $rootScope.$apply();
+    
+    fulfilledSpy.calledWithExactly(42).should.be.true();
+  });
+  
+  it('rejects when promise returned from handler rejects.', function () {
+    var d = $q.defer();
+    var rejectedSpy = sinon.spy();
+    d.promise.then(function () {
+      var d2 = $q.defer();
+      d2.reject('fail');
+      return d2.promise;
+    }).catch(rejectedSpy);
+    
+    d.resolve('ok');
+    $rootScope.$apply();
+    
+    rejectedSpy.calledWithExactly('fail').should.be.true();
+  });
+  
+  it('allows chaining handlers on finally, with original value.', function () {
+    var d = $q.defer();
+    
+    var fulfilledSpy = sinon.spy();
+    d.promise.then(function (result) {
+      return result + 1;
+    }).finally(function (result) {
+      return result * 2;
+    }).then(fulfilledSpy);
+    
+    d.resolve(20);
+    $rootScope.$apply();
+    
+    fulfilledSpy.calledWithExactly(21).should.be.true();
+  });
+  
+  it('allows chaining handlers on finally, with original rejection.', function () {
+    var d = $q.defer();
+    
+    var rejectedSpy = sinon.spy();
+    d.promise.then(function () {
+      throw 'fail';
+    }).finally(function() {
+    }).catch(rejectedSpy);
+    
+    d.resolve(20);
+    $rootScope.$apply();
+    
+    rejectedSpy.calledWithExactly('fail').should.be.true();
+  });
+  
+  it('resolves to original value when nested promise resolves', function () {
+    var d = $q.defer();
+    
+    var fulfilledSpy = sinon.spy();
+    var resolveNested;
+    
+    d.promise.then(function (result) {
+      return result + 1;
+    }).finally(function (result) {
+      var d2 = $q.defer();
+      resolveNested = function() {
+        d2.resolve('abc');
+      };
+    }).then(fulfilledSpy);
+    
+    d.resolve(20);
+    $rootScope.$apply();
+    fulfilledSpy.called.should.be.false();
+    
+    resolveNested();
+    $rootScope.$apply();
+    fulfilledSpy.calledWithExactly(21);
+  });
+  
+  it('rejects to original value when nested promise resloves', function () {
+    var d = $q.defer();
+    
+    var rejectedSpy = sinon.spy();
+    var resolveNested;
+    
+    d.promise.then(function (result) {
+      throw 'fail';
+    }).finally(function (result) {
+      var d2 = $q.defer();
+      resolveNested = function () {
+        d2.resolve('abc');
+      }
+      return d2.promise;
+    }).catch(rejectedSpy);
+    
+    d.resolve(20);
+    $rootScope.$apply();
+    rejectedSpy.called.should.be.false();
+    
+    resolveNested();
+    $rootScope.$apply();
+    rejectedSpy.calledWithExactly('fail').should.be.true();
+    
+    
+  });
+  
 });
