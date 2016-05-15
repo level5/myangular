@@ -8,12 +8,13 @@ var createInjector = require('../src/injector');
 
 describe('$q', function () {
   
-  var $q, $rootScope;
+  var $q, $$q, $rootScope;
   
   beforeEach(function () {
     publishExternalAPI();
     var injector = createInjector(['ng']);
     $q = injector.get('$q');
+    $$q = injector.get('$$q');
     $rootScope = injector.get('$rootScope');
   });
   
@@ -478,6 +479,7 @@ describe('$q', function () {
       resolveNested = function() {
         d2.resolve('abc');
       };
+      return d2.promise;
     }).then(fulfilledSpy);
     
     d.resolve(20);
@@ -486,7 +488,7 @@ describe('$q', function () {
     
     resolveNested();
     $rootScope.$apply();
-    fulfilledSpy.calledWithExactly(21);
+    fulfilledSpy.calledWithExactly(21).should.be.true();
   });
   
   it('rejects to original value when nested promise resloves', function () {
@@ -513,6 +515,395 @@ describe('$q', function () {
     $rootScope.$apply();
     rejectedSpy.calledWithExactly('fail').should.be.true();
     
+    
+  });
+  
+  it('rejects when nested promise rejects in finally', function () {
+    var d = $q.defer();
+    
+    var fulfilledSpy = sinon.spy();
+    var rejectedSpy = sinon.spy();
+    var rejecteNested;
+    
+    d.promise.then(function (result) {
+      return result + 1;
+    }).finally(function (result) {
+      var d2 = $q.defer();
+      rejecteNested = function () {
+        d2.reject('fail');
+      };
+      return d2.promise;
+    }).then(fulfilledSpy, rejectedSpy);
+    
+    d.resolve(20);
+    $rootScope.$apply();
+    fulfilledSpy.called.should.be.false();
+    
+    rejecteNested();
+    $rootScope.$apply();
+    fulfilledSpy.called.should.be.false();
+    rejectedSpy.calledWithExactly('fail').should.be.true();
+  });
+  
+  it('can report progress', function () {
+    var d = $q.defer();
+    var progressSpy = sinon.spy();
+    d.promise.then(null, null, progressSpy);
+    
+    d.notify('working...');
+    $rootScope.$apply();
+    
+    progressSpy.calledWithExactly('working...').should.be.true();
+  });
+  
+  it('can report progress many times', function () {
+    var d = $q.defer();
+    var progressSpy = sinon.spy();
+    d.promise.then(null, null, progressSpy);
+    
+    d.notify('40%');
+    $rootScope.$apply();
+    
+    d.notify('80%');
+    d.notify('100%');
+    $rootScope.$apply();
+    
+    progressSpy.callCount.should.eql(3);
+  });
+  
+  it('does not notifiy progress after being resolved.', function () {
+    var d = $q.defer();
+    var progressSpy = sinon.spy();
+    d.promise.then(null, null, progressSpy);
+    
+    d.resolve('ok');
+    d.notify('working...');
+    $rootScope.$apply();
+    
+    progressSpy.called.should.be.false();
+  });
+  
+  it('does not notify progress after being rejected.', function () {
+    var d = $q.defer();
+    var progressSpy = sinon.spy();
+    d.promise.then(null, null, progressSpy);
+
+    d.reject('fail');    
+    d.notify('working...');
+    $rootScope.$apply();
+    
+    progressSpy.called.should.be.false();
+  });
+  
+  it('can notify progress through chain.', function () {
+    var d = $q.defer();
+    var progressSpy = sinon.spy();
+    
+    d.promise.then(_.noop).then(_.noop).then(null, null, progressSpy);
+    
+    d.notify('working...');
+    $rootScope.$apply();
+    
+    progressSpy.calledWithExactly('working...').should.be.true();
+  });
+  
+  it('transforms progress through handlers', function () {
+    var d = $q.defer();
+    var progressSpy = sinon.spy();
+    
+    d.promise
+      .then(_.noop)
+      .then(null, null, function (progress) {
+        return '***' + progress + '***';
+      }).catch(_.noop)
+      .then(null, null, progressSpy);
+      
+      d.notify('working...');
+      $rootScope.$apply();
+      
+      progressSpy.calledWithExactly('***working...***');   
+  });
+  
+  it('recovers from progressback exceptions.', function () {
+    var d = $q.defer();
+    var progressSpy = sinon.spy();
+    var fulfilledSpy = sinon.spy();
+    
+    d.promise.then(null, null, function (progress) {
+      throw 'fail';
+    });
+    d.promise.then(fulfilledSpy, null, progressSpy);
+    
+    d.notify('working...');
+    d.resolve('ok');
+    $rootScope.$apply();
+    
+    progressSpy.calledWithExactly('working...').should.be.true();
+  });
+  
+  it('can notifiy progress through promise return from handler', function () {
+    var d = $q.defer();
+    
+    var progressSpy = sinon.spy();
+    d.promise.then(null, null, progressSpy);
+    
+    var d2 = $q.defer();
+    
+    d.resolve(d2.promise);
+    
+    d2.notify('working...');
+    
+    $rootScope.$apply();
+    
+    progressSpy.calledWithExactly('working...').should.be.true();
+    
+  });
+  
+  it('allows attaching progressback in finally', function () {
+    var d  = $q.defer();
+    var progressSpy = sinon.spy();
+    d.promise.finally(null, progressSpy);
+    
+    d.notify('working...');
+    $rootScope.$apply();
+    
+    progressSpy.calledWithExactly('working...').should.be.true();
+  });
+  
+  it('can make an immediately rejected promise', function () {
+    var fulfilledSpy = sinon.spy();
+    var rejectedSpy = sinon.spy();
+    
+    var promise = $q.reject('fail');
+    promise.then(fulfilledSpy, rejectedSpy);
+    
+    $rootScope.$apply();
+    
+    fulfilledSpy.called.should.be.false();
+    rejectedSpy.calledWithExactly('fail').should.be.true();
+  });
+  
+  it('can make an immediately resolved promise', function () {
+    var fulfilledSpy = sinon.spy();
+    var rejectedSpy = sinon.spy();
+    
+    var promise = $q.when('ok');
+    promise.then(fulfilledSpy, rejectedSpy);
+    
+    $rootScope.$apply();
+    
+    fulfilledSpy.calledWithExactly('ok').should.be.true();
+    rejectedSpy.called.should.be.false();
+  });
+  
+  it('can wrap a foreign promise', function () {
+    var fulfilledSpy = sinon.spy();
+    var rejectedSpy = sinon.spy();
+    
+    var promise = $q.when({
+      then: function (handler) {
+        $rootScope.$evalAsync(function() {
+          handler('ok');
+        });
+      }
+    });
+    
+    promise.then(fulfilledSpy, rejectedSpy);
+    
+    $rootScope.$apply();
+    
+    fulfilledSpy.calledWithExactly('ok').should.be.true();
+    rejectedSpy.called.should.be.false();
+  });
+  
+  it('takes callbacks directly when wrapping', function () {
+    var fulfilledSpy = sinon.spy();
+    var rejectedSpy = sinon.spy();
+    var progressSpy = sinon.spy();
+    
+    var wrapped = $q.defer();
+    $q.when(
+      wrapped.promise,
+      fulfilledSpy,
+      rejectedSpy,
+      progressSpy
+    );
+    
+    wrapped.notify('working...');
+    wrapped.resolve('ok');
+    $rootScope.$apply();
+    
+    fulfilledSpy.calledWithExactly('ok').should.be.true();
+    rejectedSpy.called.should.be.false();
+    progressSpy.calledWithExactly('working...').should.be.true();
+  });
+  
+  it('makes an immediately resolved promise with resolve', function () {
+    var fulfilledSpy = sinon.spy();
+    var rejectedSpy = sinon.spy();
+    
+    var promise = $q.resolve('ok');
+    promise.then(fulfilledSpy, rejectedSpy);
+    
+    $rootScope.$apply();
+    
+    fulfilledSpy.calledWithExactly('ok').should.be.true();
+    rejectedSpy.called.should.be.false();
+  });
+  
+  describe('all', function () {
+    
+    it('can resolve an array of promise to array of results', function () {
+      
+      var promise = $q.all([$q.when(1), $q.when(2), $q.when(3)]);
+      var fulfilledSpy = sinon.spy();
+      promise.then(fulfilledSpy);
+      
+      $rootScope.$apply();
+      
+      fulfilledSpy.calledWithExactly([1, 2, 3]).should.be.true();
+      
+    });
+    
+    it('can resolve an object of promises to an object of results', function () {
+      var promise = $q.all({a: $q.when(1), b: $q.when(2)});
+      var fulfilledSpy = sinon.spy();
+      promise.then(fulfilledSpy);
+      
+      $rootScope.$apply();
+      
+      fulfilledSpy.calledWithExactly({a:1, b:2}).should.be.true();
+    });
+    
+    it('can resolve an empty array of promises immediately', function () {
+      var promise = $q.all([]);
+      var fulfilledSpy = sinon.spy();
+      promise.then(fulfilledSpy);
+      
+      $rootScope.$apply();
+      
+      fulfilledSpy.calledWithExactly([]).should.be.true();
+    });
+    
+    it('can resolve an empty object of promises immediately', function () {
+      var promise = $q.all({});
+      var fulfilledSpy = sinon.spy();
+      promise.then(fulfilledSpy);
+      
+      $rootScope.$apply();
+      
+      fulfilledSpy.calledWithExactly({}).should.be.true();
+    });
+    
+    it('rejects when any of the promise rejects', function () {
+      var promise = $q.all([$q.when(1), $q.when(2), $q.reject('fail')]);
+      var fulfilledSpy = sinon.spy();
+      var rejectedSpy = sinon.spy();
+      
+      promise.then(fulfilledSpy, rejectedSpy);
+      $rootScope.$apply();
+      
+      fulfilledSpy.called.should.be.false();
+      rejectedSpy.calledWithExactly('fail').should.be.true();
+    });
+    
+    it('wraps non-promises in the input collection', function () {
+      var promise = $q.all([$q.when(1), 2, 3]);
+      var fulfilledSpy = sinon.spy();
+      promise.then(fulfilledSpy);
+      
+      $rootScope.$apply();
+      
+      fulfilledSpy.calledWithExactly([1, 2, 3]).should.be.true();
+    });
+    
+  });
+  
+  describe('ES6 style', function () {
+    
+    it('is a function', function () {
+      $q.should.be.Function();
+    });
+    
+    it('expects a function as an argument', function () {
+      ($q).should.throw();
+      $q(_.noop); // 监测这样不会抛异常
+    });
+    
+    it('return a promise', function () {
+      $q(_.noop).should.be.Object();
+      $q(_.noop).then.should.be.Function();
+    });
+    
+    it('calls function with a resolve function', function () {
+      var fulfilledSpy = sinon.spy();
+      
+      $q(function(resolve) {
+        resolve('ok');
+      }).then(fulfilledSpy);
+      
+      $rootScope.$apply();
+      fulfilledSpy.calledWithExactly('ok').should.be.true();
+    });
+        
+    it('calls function with a reject function', function () {
+      var fulfilledSpy = sinon.spy();
+      var rejectedSpy = sinon.spy();
+      
+      $q(function(resolve, reject) {
+        reject('fail');
+      }).then(fulfilledSpy, rejectedSpy);
+      
+      $rootScope.$apply();
+      fulfilledSpy.called.should.be.false();
+      rejectedSpy.calledWithExactly('fail').should.be.true();
+    });
+  });
+  
+  describe('$$q', function () {
+    
+    var clock;
+    
+    beforeEach(function () {
+      clock = sinon.useFakeTimers();
+    });
+    
+    afterEach(function () {
+      clock.restore();
+    });
+    
+    
+    it('uses deferreds that do not reslove at digist', function () {
+      var d = $$q.defer();
+      var fulfilledSpy = sinon.spy();
+      d.promise.then(fulfilledSpy);
+      d.resolve('ok');
+      $rootScope.$apply();
+      fulfilledSpy.called.should.be.false();
+    });
+    
+    it('uses deferreds that resolve later', function () {
+      var d = $$q.defer();
+      var fulfilledSpy = sinon.spy();
+      d.promise.then(fulfilledSpy);
+      d.resolve('ok');
+      
+      clock.tick(1);
+      
+      fulfilledSpy.calledWithExactly('ok').should.be.true();
+    });
+    
+    it('does not invoke digest', function () {
+      var d = $$q.defer();
+      d.promise.then(_.noop);
+      d.resolve('ok');
+      
+      var watchSpy = sinon.spy();
+      $rootScope.$watch(watchSpy);
+      
+      clock.tick(1);
+      watchSpy.called.should.be.false();
+    })
     
   });
   
