@@ -3,9 +3,23 @@
 var _ = require('lodash');
 
 function $HttpProvider() {
+  
+  var defaults = {
+    headers: {
+      common: {
+        Accept: 'application/json, text/plain, */*'
+      }
+    }
+  };
+  
   this.$get = ['$httpBackend', '$q', '$rootScope', function ($httpBackend, $q, $rootScope) {
-    return function $http(config) {
+    return function $http(requestConfig) {
       var deferred = $q.defer();
+      
+      var config = _.extend({
+        method: 'GET'
+      }, requestConfig);
+      config.headers = mergeHeaders(requestConfig);
       
       function done(status, response, statusText) {
         status = Math.max(status, 0);
@@ -24,7 +38,20 @@ function $HttpProvider() {
         return status >= 200 && status < 300;
       }
       
-      $httpBackend(config.method, config.url, config.data, done);
+      function mergeHeaders(config) {
+        return _.extend(
+          {},
+          defaults.headers.common,
+          config.headers
+        );
+      }
+      
+      $httpBackend(
+        config.method, 
+        config.url, 
+        config.data, 
+        done,
+        config.headers);
       return deferred.promise;
     };
   }];

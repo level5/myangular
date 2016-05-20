@@ -113,7 +113,42 @@ describe('$http', function () {
     response.config.url.should.eql('http://level5.cn');
   });
   
-  it('')
+  it('uses GET method by default', function () {
+    $http({
+      url: 'http://level5.cn'
+    });
+    
+    requests.length.should.eql(1);
+    requests[0].method.should.eql('GET');
+  });
   
+  it('sets headers on request', function () {
+    $http({
+      url: 'http://level5.cn',
+      headers: {
+        'Accept': 'text/plian',
+        'Cache-Control': 'no-cache'
+      }
+    });
+    
+    requests.length.should.eql(1);
+    requests[0].requestHeaders.Accept.should.eql('text/plian');
+    requests[0].requestHeaders['Cache-Control'].should.eql('no-cache');
+    
+  });
+  
+  it('sets default headers on request', function () {
+    $http({
+      url: 'http://level5.cn'
+    });
+    requests.length.should.eql(1);
+    requests[0].requestHeaders.Accept.should.eql('application/json, text/plain, */*');
+  });
+  
+  it('sets method-specific default headers on request', function () {
+    $http({
+      method: 'POST'
+    });
+  });
   
 });
