@@ -338,6 +338,87 @@ describe('$http', function () {
     requests[0].requestBody.should.eql('-*42*-');
   });
 
-  it('allows setting transforms in defaults', function() {});
+  it('allows setting transforms in defaults', function() {
+    $http.defaults.transformRequest = [function(data) {
+      return '*' + data + '*';
+    }];
+    $http({
+      method: 'POST',
+      url: 'http://level5.cn',
+      data: 42
+    });
+
+    requests[0].requestBody.should.eql('*42*');
+  });
+
+  it('passes request headers getter to transforms', function() {
+    $http.defaults.transformRequest = [function(data, headers) {
+      if (headers('Content-Type') === 'text/emphasized') {
+        return '*' + data + '*';
+      } else {
+        return data;
+      }
+    }];
+    $http({
+      method: 'POST',
+      url: 'http://level5.cn',
+      data: 42,
+      headers: {
+        'content-type': 'text/emphasized'
+      }
+    });
+
+    requests[0].requestBody.should.eql('*42*');
+  });
+
+  it('allows transforming responses with functions', function () {
+    var response;
+    $http({
+      url: 'http://level5.cn',
+      transformResponse: function(data) {
+        return '*' + data + '*';
+      }
+    }).then(function(r) {
+      response = r;
+    });
+
+    requests[0].respond(200, {'Content-Type': 'text/plain'}, 'Hello');
+    response.data.should.eql('*Hello*');
+
+  });
+
+  it('passes response headers to transform functions', function () {
+    var response;
+    $http({
+      url: 'http://level5.cn',
+      transformResponse: function(data, headers) {
+        if (headers('content-type') === 'text/decorated') {
+          return '*' + data + '*';
+        } else {
+          return data;
+        }
+      }
+    }).then(function(r) {
+      response = r;
+    });
+
+    requests[0].respond(200, {'Content-Type': 'text/decorated'}, 'Hello');
+    response.data.should.eql('*Hello*');
+  });
+
+  it('allows setting default reponses transform', function () {
+    $http.defaults.transformResponse = [function(data) {
+      return '*' + data + '*';
+    }];
+    var response;
+    $http({
+      url: 'http://level5.cn'
+    }).then(function(r) {
+      response = r;
+    });
+
+    requests[0].respond(200, {'Content-Type': 'text/plain'}, 'Hello');
+    response.data.should.eql('*Hello*');
+  });
 
 });
