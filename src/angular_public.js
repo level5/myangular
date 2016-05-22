@@ -6,7 +6,7 @@ var setupModuleLoader = require('./loader');
 
 function publishExternalAPI() {
   setupModuleLoader(window);
-  
+
   var ngModule = window.angular.module('ng', []);
   ngModule.provider('$filter', require('./filter'));
   ngModule.provider('$parse', require('./parse'));
@@ -14,7 +14,9 @@ function publishExternalAPI() {
   ngModule.provider('$q', require('./q').$QProvider);
   ngModule.provider('$$q', require('./q').$$QProvider);
   ngModule.provider('$httpBackend', require('./http_backend'));
-  ngModule.provider('$http', require('./http'));
+  ngModule.provider('$http', require('./http').$HttpProvider);
+  ngModule.provider('$httpParamSerializer', require('./http').$httpParamSerializerProvider);
+  ngModule.provider('$httpParamSerializerJQLike', require('./http').$httpParamSerializerJQLikeProvider);
 }
 
 module.exports = publishExternalAPI;

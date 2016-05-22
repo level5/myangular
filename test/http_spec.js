@@ -421,4 +421,304 @@ describe('$http', function () {
     response.data.should.eql('*Hello*');
   });
 
+  it('transforms error responses also', function () {
+    var response;
+    $http({
+      url: 'http://level5.cn',
+      transformResponse: function (data) {
+        return '*' + data + '*';
+      }
+    }).catch(function (r) {
+      response = r;
+    });
+
+    requests[0].respond(401, {'Content-Type': 'text/plain'}, 'Fail');
+    response.data.should.eql('*Fail*');
+
+  });
+
+  it('passes HTTP status to respose transformers', function () {
+    var response;
+    $http({
+      url: 'http://level5.cn',
+      transformResponse: function (data, headers, status) {
+        if (status === 401) {
+          return 'unauthorized';
+        } else {
+          return data;
+        }
+      }
+    }).catch(function (r) {
+      response = r;
+    });
+
+    requests[0].respond(401, {'Content-Type': 'text/plain'}, 'Fail');
+    response.data.should.eql('unauthorized');
+
+  });
+
+  it('serializes object data to JSON for requests', function () {
+    $http({
+      method: 'POST',
+      url: 'http://level5.cn',
+      data: {aKey: 42}
+    });
+    requests[0].requestBody.should.eql('{"aKey":42}');
+  });
+
+  it('serializes array data to JSON fro requests', function () {
+    $http({
+      method: 'POST',
+      url: 'http://level5.cn',
+      data: [1, 'two', 3]
+    });
+
+    requests[0].requestBody.should.eql('[1,"two",3]');
+  });
+
+  it.skip('does not serializes blobs for requests', function () {
+    var BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder ||
+                        window.MozBlobBuilder || window.MSBlobBuilder;
+    var bb = new BlobBuilder();
+    bb.apend('hello');
+    var blob = bb.getBlob('text/plain');
+
+    $http({
+      method: 'POST',
+      url: 'http://level5.cn',
+      data: blob
+    });
+
+    requests[0].requestBody.should.be.exactly(blob);
+  });
+
+  it('does not serialize form data from requests', function () {
+    var formData = new FormData();
+    formData.append('aFiled', 'aValue');
+    $http({
+      method: 'POST',
+      url: 'http://level5.cn',
+      data: formData
+    });
+
+    requests[0].requestBody.should.be.exactly(formData);
+
+  });
+
+  it('parses JSON data for JSON responses', function () {
+    var response;
+    $http({
+      method: 'GET',
+      url: 'http://level5.cn',
+    }).then(function (r) {
+      response = r;
+    });
+    requests[0].respond(
+      200, {'Content-Type': 'application/json'}, '{"message": "Hello"}');
+
+    response.data.should.be.Object();
+    response.data.message.should.eql('Hello');
+  });
+
+  it('parses a JSON object response without content type', function () {
+    var response;
+    $http({
+      method: 'GET',
+      url: 'http://level5.cn',
+    }).then(function (r) {
+      response = r;
+    });
+    requests[0].respond(200, {}, '{"message": "Hello"}');
+
+    response.data.should.be.Object();
+    response.data.message.should.eql('Hello');
+  });
+
+  it('parses a JSON array response without content type', function () {
+    var response;
+    $http({
+      method: 'GET',
+      url: 'http://level5.cn',
+    }).then(function (r) {
+      response = r;
+    });
+    requests[0].respond(200, {}, '[1, 2, 3]');
+
+    response.data.should.be.Array();
+    response.data.should.eql([1, 2, 3]);
+  });
+
+  it('does not choke on response resembling JSON but not valid', function () {
+    var response;
+    $http({
+      method: 'GET',
+      url: 'http://level5.cn',
+    }).then(function (r) {
+      response = r;
+    });
+    requests[0].respond(200, {}, '{1, 2, 3]');
+    response.data.should.eql('{1, 2, 3]');
+  });
+
+  it('does not try to parse interpolation expr as JSON', function () {
+    var response;
+    $http({
+      method: 'GET',
+      url: 'http://level5.cn',
+    }).then(function (r) {
+      response = r;
+    });
+    requests[0].respond(200, {}, '{{expr}}');
+    response.data.should.eql('{{expr}}');
+  });
+
+  it('adds params to URL', function () {
+    $http({
+      url: 'http://level5.cn',
+      params: {
+        a: 42
+      }
+    });
+
+    requests[0].url.should.eql('http://level5.cn?a=42');
+  });
+
+  it('adds additional params to URL', function() {
+    $http({
+      url: 'http://level5.cn?a=42',
+      params: {
+        b: 42
+      }
+    });
+
+    requests[0].url.should.eql('http://level5.cn?a=42&b=42');
+  });
+
+  it('escapes url characters in params', function () {
+    $http({
+      url: 'http://level5.cn',
+      params: {
+        '==': '&&'
+      }
+    });
+    requests[0].url.should.eql('http://level5.cn?%3D%3D=%26%26');
+  });
+
+  it('does not attach null or undefined params', function () {
+    $http({
+      url: 'http://level5.cn',
+      params: {
+        a: null,
+        b: undefined
+      }
+    });
+    requests[0].url.should.eql('http://level5.cn');
+  });
+
+  it('attaches multiple params from arrays', function () {
+    $http({
+      url: 'http://level5.cn',
+      params: {
+        a: [42, 43]
+      }
+    });
+    requests[0].url.should.eql('http://level5.cn?a=42&a=43');
+  });
+
+  it('serializes objects to json', function () {
+    $http({
+      url: 'http://level5.cn',
+      params: {
+        a: {b:42}
+      }
+    });
+    requests[0].url.should.eql('http://level5.cn?a=%7B%22b%22%3A42%7D');
+  });
+
+  it('allows substituting param serializer', function () {
+
+    $http({
+      url: 'http://level5.cn',
+      params: {
+        a: 42,
+        b: 43
+      },
+      paramSerializer: function (params) {
+          return _.map(params, function (v, k) {
+            return k + '=' + v + 'lol';
+          }).join('&');
+      }
+    });
+
+    requests[0].url.should.eql('http://level5.cn?a=42lol&b=43lol');
+
+  });
+
+  it('allows substituting param serializer through DI', function () {
+    var injector = createInjector(['ng', function ($provide) {
+      $provide.factory('mySpecialSerializer', function () {
+        return function (params) {
+          return _.map(params, function (v, k) {
+            return k + '=' + v + 'lol';
+          }).join('&');
+        }
+      });
+    }]);
+    injector.invoke(function($http) {
+      $http({
+        url: 'http://level5.cn',
+        params: {
+          a: 42,
+          b: 43
+        },
+        paramSerializer: 'mySpecialSerializer'
+      });
+    });
+    requests[0].url.should.eql('http://level5.cn?a=42lol&b=43lol');
+  });
+
+  it('makes default param serializer available through DI', function () {
+    var injector = createInjector(['ng']);
+    injector.invoke(function ($httpParamSerializer) {
+      var result = $httpParamSerializer({a: 42, b: 43});
+      result.should.eql('a=42&b=43');
+    })
+  });
+
+  describe('JQ-like param serialization', function () {
+
+    it('is possible', function () {
+      $http({
+        url: 'http://level5.cn',
+        params: {
+          a: 42,
+          b: 43
+        },
+        paramSerializer: '$httpParamSerializerJQLike'
+      });
+      requests[0].url.should.eql('http://level5.cn?a=42&b=43');
+    });
+
+    it('uses square brackets in arrays', function () {
+      $http({
+        url: 'http://level5.cn',
+        params: {
+          a: [42, 43]
+        },
+        paramSerializer: '$httpParamSerializerJQLike'
+      });
+      requests[0].url.should.eql('http://level5.cn?a%5B%5D=42&a%5B%5D=43');
+    });
+
+    it('uses square brackets in objects', function () {
+      $http({
+        url: 'http://level5.cn',
+        params: {
+          a: {b: 42, c: 43}
+        },
+        paramSerializer: '$httpParamSerializerJQLike'
+      });
+      requests[0].url.should.eql('http://level5.cn?a%5Bb%5D=42&a%5Bc%5D=43');
+    });
+  });
 });
