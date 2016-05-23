@@ -104,7 +104,7 @@ function headersGetter(headers) {
 }
 
 function $HttpProvider() {
-  
+
   var interceptorFactories = this.interceptors = [];
 
   var defaults = this.defaults = {
@@ -160,7 +160,7 @@ function $HttpProvider() {
     '$rootScope',
     '$injector',
     function ($httpBackend, $q, $rootScope, $injector) {
-      
+
       var interceptors = _.map(interceptorFactories, function (fn) {
         return _.isString(fn) ? $injector.get(fn) : $injector.invoke(fn);
       });
@@ -195,40 +195,7 @@ function $HttpProvider() {
         return deferred.promise;
       }
 
-      function $http(requestConfig) {
-
-        var config = _.extend({
-          method: 'GET',
-          transformRequest: defaults.transformRequest,
-          transformResponse: defaults.transformResponse,
-          paramSerializer: defaults.paramSerializer
-        }, requestConfig);
-        config.headers = mergeHeaders(requestConfig);
-        if(_.isString(config.paramSerializer)) {
-          config.paramSerializer = $injector.get(config.paramSerializer);
-        }
-        
-        function serverRequest(config) {
-        if(_.isUndefined(config.withCredentials) &&
-            !_.isUndefined(defaults.withCredentials)) {
-          config.withCredentials = defaults.withCredentials;
-        }
-        var reqData = transformData(
-          config.data,
-          headersGetter(config.headers),
-          undefined,
-          config.transformRequest);
-
-        if (_.isUndefined(reqData)) {
-          _.forEach(config.headers, function(v, k) {
-            if (k.toLowerCase() === 'content-type') {
-              delete config.headers[k];
-            }
-          });
-        }
-            
-        }
-
+      function serverRequest(config) {
         if(_.isUndefined(config.withCredentials) &&
             !_.isUndefined(defaults.withCredentials)) {
           config.withCredentials = defaults.withCredentials;
@@ -265,7 +232,25 @@ function $HttpProvider() {
         return sendReq(config, reqData)
           .then(transformResponse, transformResponse);
       }
-      
+
+      function $http(requestConfig) {
+
+        var config = _.extend({
+          method: 'GET',
+          transformRequest: defaults.transformRequest,
+          transformResponse: defaults.transformResponse,
+          paramSerializer: defaults.paramSerializer
+        }, requestConfig);
+        if(_.isString(config.paramSerializer)) {
+          config.paramSerializer = $injector.get(config.paramSerializer);
+        }
+        config.headers = mergeHeaders(requestConfig);
+
+        var promise = $q.when(config);
+
+        return promise.then(serverRequest);
+      }
+
       $http.defaults = defaults;
       _.forEach(['get', 'head', 'delete'], function (method) {
         $http[method] = function (url, config) {
@@ -336,7 +321,7 @@ function $httpParamSerializerJQLikeProvider() {
       }
 
       serialize(params, '', true);
-      
+
       return parts.join('&');
     };
   };

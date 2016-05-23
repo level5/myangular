@@ -8,13 +8,14 @@ var createInjector = require('../src/injector');
 
 describe('$http', function () {
 
-  var $http;
+  var $http, $rootScope;
   var xhr, requests;
 
   beforeEach(function () {
     publishExternalAPI();
     var injector = createInjector(['ng']);
     $http = injector.get('$http');
+    $rootScope = injector.get('$rootScope');
   });
 
   beforeEach(function () {
@@ -47,6 +48,7 @@ describe('$http', function () {
       data: 'Hello'
     });
 
+    $rootScope.$apply();
     requests.length.should.eql(1);
     requests[0].method.should.eql('POST');
     requests[0].url.should.eql('http://level5.cn');
@@ -65,6 +67,7 @@ describe('$http', function () {
       response = r;
     });
 
+    $rootScope.$apply();
     requests[0].respond(200, {}, 'Hello');
     response.should.be.Object();
     response.status.should.eql(200);
@@ -84,6 +87,7 @@ describe('$http', function () {
       response = r;
     });
 
+    $rootScope.$apply();
     requests[0].respond(401, {}, 'Fail');
 
     response.should.be.Object();
@@ -105,6 +109,7 @@ describe('$http', function () {
       response = r;
     });
 
+    $rootScope.$apply();
     requests[0].onerror();
 
     response.should.be.Object();
@@ -118,6 +123,7 @@ describe('$http', function () {
       url: 'http://level5.cn'
     });
 
+    $rootScope.$apply();
     requests.length.should.eql(1);
     requests[0].method.should.eql('GET');
   });
@@ -131,6 +137,7 @@ describe('$http', function () {
       }
     });
 
+    $rootScope.$apply();
     requests.length.should.eql(1);
     requests[0].requestHeaders.Accept.should.eql('text/plain');
     requests[0].requestHeaders['Cache-Control'].should.eql('no-cache');
@@ -141,6 +148,8 @@ describe('$http', function () {
     $http({
       url: 'http://level5.cn'
     });
+
+    $rootScope.$apply();
     requests.length.should.eql(1);
     requests[0].requestHeaders.Accept.should.eql('application/json, text/plain, */*');
   });
@@ -152,6 +161,7 @@ describe('$http', function () {
       data: 42
     });
 
+    $rootScope.$apply();
     requests.length.should.eql(1);
     requests[0].requestHeaders['Content-Type'].should.eql(
       'application/json;charset=utf-8'
@@ -165,6 +175,8 @@ describe('$http', function () {
       url: 'http://level5.cn',
       data: 42
     });
+
+    $rootScope.$apply();
     requests.length.should.eql(1);
     requests[0].requestHeaders['Content-Type'].should.eql(
       'text/plain;charset=utf-8'
@@ -179,11 +191,14 @@ describe('$http', function () {
       console.log('GXG', JSON.stringify($httpProvider.defaults));
     }]);
     $http = injector.get('$http');
+    $rootScope = injector.get('$rootScope');
     $http({
       method: 'POST',
       url: 'http://level5.cn',
       data: 42
     });
+    $rootScope.$apply();
+
     requests.length.should.eql(1);
     requests[0].requestHeaders['Content-Type'].should.eql(
       'text/plain;charset=utf-8'
@@ -201,6 +216,7 @@ describe('$http', function () {
       }
     });
 
+    $rootScope.$apply();
     requests.length.should.eql(1);
     should(requests[0].requestHeaders['Content-Type']).be.undefined();
     requests[0].requestHeaders['content-type'].should.eql(
@@ -217,6 +233,7 @@ describe('$http', function () {
       }
     });
 
+    $rootScope.$apply();
     requests.length.should.eql(1);
     should(requests[0].requestHeaders['Content-Type']).not.eql('application/json;charset=utf-8');
   });
@@ -234,6 +251,7 @@ describe('$http', function () {
     };
     $http(request);
 
+    $rootScope.$apply();
     contentTypeStub.calledWithExactly(request).should.be.true();
     requests[0].requestHeaders['Content-Type'].should.eql(
       'text/plain;charset=utf-8'
@@ -267,6 +285,8 @@ describe('$http', function () {
     }).then(function (r) {
       response = r;
     });
+
+    $rootScope.$apply();
     requests[0].respond(200, {'Content-Type': 'text/plain'}, 'Hello');
 
     response.headers.should.be.Function();
@@ -284,6 +304,7 @@ describe('$http', function () {
       response = r;
     });
 
+    $rootScope.$apply();
     requests[0].respond(200, {'Content-Type': 'text/plain'}, 'Hello');
     response.headers().should.eql({'content-type': 'text/plain'});
   });
@@ -296,6 +317,7 @@ describe('$http', function () {
       withCredentials: true
     });
 
+    $rootScope.$apply();
     requests[0].withCredentials.should.be.true();
   });
 
@@ -307,6 +329,8 @@ describe('$http', function () {
       url: 'http://level5.cn',
       data: 42
     });
+
+    $rootScope.$apply();
     requests[0].withCredentials.should.be.true();
   });
 
@@ -320,6 +344,7 @@ describe('$http', function () {
       }
     });
 
+    $rootScope.$apply();
     requests[0].requestBody.should.eql('*42*');
   });
 
@@ -335,6 +360,7 @@ describe('$http', function () {
       }]
     });
 
+    $rootScope.$apply();
     requests[0].requestBody.should.eql('-*42*-');
   });
 
@@ -348,6 +374,7 @@ describe('$http', function () {
       data: 42
     });
 
+    $rootScope.$apply();
     requests[0].requestBody.should.eql('*42*');
   });
 
@@ -368,6 +395,7 @@ describe('$http', function () {
       }
     });
 
+    $rootScope.$apply();
     requests[0].requestBody.should.eql('*42*');
   });
 
@@ -382,6 +410,7 @@ describe('$http', function () {
       response = r;
     });
 
+    $rootScope.$apply();
     requests[0].respond(200, {'Content-Type': 'text/plain'}, 'Hello');
     response.data.should.eql('*Hello*');
 
@@ -402,6 +431,7 @@ describe('$http', function () {
       response = r;
     });
 
+    $rootScope.$apply();
     requests[0].respond(200, {'Content-Type': 'text/decorated'}, 'Hello');
     response.data.should.eql('*Hello*');
   });
@@ -417,6 +447,7 @@ describe('$http', function () {
       response = r;
     });
 
+    $rootScope.$apply();
     requests[0].respond(200, {'Content-Type': 'text/plain'}, 'Hello');
     response.data.should.eql('*Hello*');
   });
@@ -432,6 +463,7 @@ describe('$http', function () {
       response = r;
     });
 
+    $rootScope.$apply();
     requests[0].respond(401, {'Content-Type': 'text/plain'}, 'Fail');
     response.data.should.eql('*Fail*');
 
@@ -452,6 +484,7 @@ describe('$http', function () {
       response = r;
     });
 
+    $rootScope.$apply();
     requests[0].respond(401, {'Content-Type': 'text/plain'}, 'Fail');
     response.data.should.eql('unauthorized');
 
@@ -463,6 +496,8 @@ describe('$http', function () {
       url: 'http://level5.cn',
       data: {aKey: 42}
     });
+
+    $rootScope.$apply();
     requests[0].requestBody.should.eql('{"aKey":42}');
   });
 
@@ -473,6 +508,7 @@ describe('$http', function () {
       data: [1, 'two', 3]
     });
 
+    $rootScope.$apply();
     requests[0].requestBody.should.eql('[1,"two",3]');
   });
 
@@ -489,6 +525,7 @@ describe('$http', function () {
       data: blob
     });
 
+    $rootScope.$apply();
     requests[0].requestBody.should.be.exactly(blob);
   });
 
@@ -501,6 +538,7 @@ describe('$http', function () {
       data: formData
     });
 
+    $rootScope.$apply();
     requests[0].requestBody.should.be.exactly(formData);
 
   });
@@ -513,6 +551,8 @@ describe('$http', function () {
     }).then(function (r) {
       response = r;
     });
+
+    $rootScope.$apply();
     requests[0].respond(
       200, {'Content-Type': 'application/json'}, '{"message": "Hello"}');
 
@@ -528,6 +568,8 @@ describe('$http', function () {
     }).then(function (r) {
       response = r;
     });
+
+    $rootScope.$apply();
     requests[0].respond(200, {}, '{"message": "Hello"}');
 
     response.data.should.be.Object();
@@ -542,6 +584,8 @@ describe('$http', function () {
     }).then(function (r) {
       response = r;
     });
+
+    $rootScope.$apply();
     requests[0].respond(200, {}, '[1, 2, 3]');
 
     response.data.should.be.Array();
@@ -556,6 +600,8 @@ describe('$http', function () {
     }).then(function (r) {
       response = r;
     });
+
+    $rootScope.$apply();
     requests[0].respond(200, {}, '{1, 2, 3]');
     response.data.should.eql('{1, 2, 3]');
   });
@@ -568,6 +614,8 @@ describe('$http', function () {
     }).then(function (r) {
       response = r;
     });
+
+    $rootScope.$apply();
     requests[0].respond(200, {}, '{{expr}}');
     response.data.should.eql('{{expr}}');
   });
@@ -580,6 +628,7 @@ describe('$http', function () {
       }
     });
 
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?a=42');
   });
 
@@ -591,6 +640,7 @@ describe('$http', function () {
       }
     });
 
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?a=42&b=42');
   });
 
@@ -601,6 +651,8 @@ describe('$http', function () {
         '==': '&&'
       }
     });
+
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?%3D%3D=%26%26');
   });
 
@@ -612,6 +664,8 @@ describe('$http', function () {
         b: undefined
       }
     });
+
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn');
   });
 
@@ -622,6 +676,8 @@ describe('$http', function () {
         a: [42, 43]
       }
     });
+
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?a=42&a=43');
   });
 
@@ -632,6 +688,8 @@ describe('$http', function () {
         a: {b:42}
       }
     });
+
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?a=%7B%22b%22%3A42%7D');
   });
 
@@ -650,6 +708,7 @@ describe('$http', function () {
       }
     });
 
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?a=42lol&b=43lol');
 
   });
@@ -664,7 +723,7 @@ describe('$http', function () {
         }
       });
     }]);
-    injector.invoke(function($http) {
+    injector.invoke(function($http, $rootScope) {
       $http({
         url: 'http://level5.cn',
         params: {
@@ -673,8 +732,9 @@ describe('$http', function () {
         },
         paramSerializer: 'mySpecialSerializer'
       });
+      $rootScope.$apply();
+      requests[0].url.should.eql('http://level5.cn?a=42lol&b=43lol');
     });
-    requests[0].url.should.eql('http://level5.cn?a=42lol&b=43lol');
   });
 
   it('makes default param serializer available through DI', function () {
@@ -696,6 +756,8 @@ describe('$http', function () {
         },
         paramSerializer: '$httpParamSerializerJQLike'
       });
+
+      $rootScope.$apply();
       requests[0].url.should.eql('http://level5.cn?a=42&b=43');
     });
 
@@ -707,6 +769,8 @@ describe('$http', function () {
         },
         paramSerializer: '$httpParamSerializerJQLike'
       });
+
+      $rootScope.$apply();
       requests[0].url.should.eql('http://level5.cn?a%5B%5D=42&a%5B%5D=43');
     });
 
@@ -718,9 +782,11 @@ describe('$http', function () {
         },
         paramSerializer: '$httpParamSerializerJQLike'
       });
+
+      $rootScope.$apply();
       requests[0].url.should.eql('http://level5.cn?a%5Bb%5D=42&a%5Bc%5D=43');
     });
-    
+
     it('appends array indexs when items are objects', function () {
       $http({
         url: 'http://level5.cn',
@@ -729,88 +795,96 @@ describe('$http', function () {
         },
         paramSerializer: '$httpParamSerializerJQLike'
       });
+
+      $rootScope.$apply();
       requests[0].url.should.eql('http://level5.cn?a%5B0%5D%5Bb%5D=42');
     });
-    
+
   });
-  
+
   it('supports shorthand method for GET', function () {
-    
+
     $http.get('http://level5.cn', {params: {q: 42}});
-    
+
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?q=42');
     requests[0].method.should.eql('GET');
   });
-  
+
   it('supports shorthand method for HEAD', function () {
     $http.head('http://level5.cn', {params: {q: 42}});
-    
+
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?q=42');
     requests[0].method.should.eql('HEAD');
   });
-  
-  
+
+
   it('supports shorthand method for DELETE', function () {
     $http.delete('http://level5.cn', {params: {q: 42}});
-    
+
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?q=42');
     requests[0].method.should.eql('DELETE');
   });
-  
+
   it('supports shorthand method for POST with data', function () {
     $http.post('http://level5.cn', 'data', {
       params: {q: 42}
     });
-    
+
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?q=42');
     requests[0].method.should.eql('POST');
     requests[0].requestBody.should.eql('data');
   });
-  
-  
+
+
   it('supports shorthand method for PUT with data', function () {
     $http.put('http://level5.cn', 'data', {
       params: {q: 42}
     });
-    
+
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?q=42');
     requests[0].method.should.eql('PUT');
     requests[0].requestBody.should.eql('data');
   });
-  
-  
+
+
   it('supports shorthand method for PATCH with data', function () {
     $http.patch('http://level5.cn', 'data', {
       params: {q: 42}
     });
-    
+
+    $rootScope.$apply();
     requests[0].url.should.eql('http://level5.cn?q=42');
     requests[0].method.should.eql('PATCH');
     requests[0].requestBody.should.eql('data');
   });
-  
+
   it('allows attaching interceptor factories', function () {
     var interceptorFactorySpy = sinon.spy();
     var injector = createInjector(['ng', function ($httpProvider) {
       $httpProvider.interceptors.push(interceptorFactorySpy);
     }]);
-    
+
     $http = injector.get('$http');
-    
+
     interceptorFactorySpy.called.should.be.true();
   });
-  
+
   it('uses DI to instantiate interceptors', function () {
     var interceptorFactorySpy = sinon.spy();
     var injector = createInjector(['ng', function ($httpProvider) {
       $httpProvider.interceptors.push(['$rootScope', interceptorFactorySpy]);
     }]);
-    
+
     $http = injector.get('$http');
     var $rootScope = injector.get('$rootScope');
     interceptorFactorySpy.calledWithExactly($rootScope);
   });
-  
+
   it('allows refrenceing existing interceptor factories', function () {
     var interceptorFactoryStub = sinon.stub();
     interceptorFactoryStub.returns({});
@@ -818,7 +892,7 @@ describe('$http', function () {
       $provide.factory('myInterceptor', interceptorFactoryStub);
       $httpProvider.interceptors.push('myInterceptor');
     }]);
-    
+
     $http = injector.get('$http');
     interceptorFactoryStub.called.should.be.true();
   });
