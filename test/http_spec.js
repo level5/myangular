@@ -788,4 +788,38 @@ describe('$http', function () {
     requests[0].method.should.eql('PATCH');
     requests[0].requestBody.should.eql('data');
   });
+  
+  it('allows attaching interceptor factories', function () {
+    var interceptorFactorySpy = sinon.spy();
+    var injector = createInjector(['ng', function ($httpProvider) {
+      $httpProvider.interceptors.push(interceptorFactorySpy);
+    }]);
+    
+    $http = injector.get('$http');
+    
+    interceptorFactorySpy.called.should.be.true();
+  });
+  
+  it('uses DI to instantiate interceptors', function () {
+    var interceptorFactorySpy = sinon.spy();
+    var injector = createInjector(['ng', function ($httpProvider) {
+      $httpProvider.interceptors.push(['$rootScope', interceptorFactorySpy]);
+    }]);
+    
+    $http = injector.get('$http');
+    var $rootScope = injector.get('$rootScope');
+    interceptorFactorySpy.calledWithExactly($rootScope);
+  });
+  
+  it('allows refrenceing existing interceptor factories', function () {
+    var interceptorFactoryStub = sinon.stub();
+    interceptorFactoryStub.returns({});
+    var injector = createInjector(['ng', function ($provide, $httpProvider) {
+      $provide.factory('myInterceptor', interceptorFactoryStub);
+      $httpProvider.interceptors.push('myInterceptor');
+    }]);
+    
+    $http = injector.get('$http');
+    interceptorFactoryStub.called.should.be.true();
+  });
 });
