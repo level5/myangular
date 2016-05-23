@@ -720,5 +720,72 @@ describe('$http', function () {
       });
       requests[0].url.should.eql('http://level5.cn?a%5Bb%5D=42&a%5Bc%5D=43');
     });
+    
+    it('appends array indexs when items are objects', function () {
+      $http({
+        url: 'http://level5.cn',
+        params: {
+          a: [{b:42}]
+        },
+        paramSerializer: '$httpParamSerializerJQLike'
+      });
+      requests[0].url.should.eql('http://level5.cn?a%5B0%5D%5Bb%5D=42');
+    });
+    
+  });
+  
+  it('supports shorthand method for GET', function () {
+    
+    $http.get('http://level5.cn', {params: {q: 42}});
+    
+    requests[0].url.should.eql('http://level5.cn?q=42');
+    requests[0].method.should.eql('GET');
+  });
+  
+  it('supports shorthand method for HEAD', function () {
+    $http.head('http://level5.cn', {params: {q: 42}});
+    
+    requests[0].url.should.eql('http://level5.cn?q=42');
+    requests[0].method.should.eql('HEAD');
+  });
+  
+  
+  it('supports shorthand method for DELETE', function () {
+    $http.delete('http://level5.cn', {params: {q: 42}});
+    
+    requests[0].url.should.eql('http://level5.cn?q=42');
+    requests[0].method.should.eql('DELETE');
+  });
+  
+  it('supports shorthand method for POST with data', function () {
+    $http.post('http://level5.cn', 'data', {
+      params: {q: 42}
+    });
+    
+    requests[0].url.should.eql('http://level5.cn?q=42');
+    requests[0].method.should.eql('POST');
+    requests[0].requestBody.should.eql('data');
+  });
+  
+  
+  it('supports shorthand method for PUT with data', function () {
+    $http.put('http://level5.cn', 'data', {
+      params: {q: 42}
+    });
+    
+    requests[0].url.should.eql('http://level5.cn?q=42');
+    requests[0].method.should.eql('PUT');
+    requests[0].requestBody.should.eql('data');
+  });
+  
+  
+  it('supports shorthand method for PATCH with data', function () {
+    $http.patch('http://level5.cn', 'data', {
+      params: {q: 42}
+    });
+    
+    requests[0].url.should.eql('http://level5.cn?q=42');
+    requests[0].method.should.eql('PATCH');
+    requests[0].requestBody.should.eql('data');
   });
 });

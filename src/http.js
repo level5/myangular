@@ -238,7 +238,25 @@ function $HttpProvider() {
         return sendReq(config, reqData)
           .then(transformResponse, transformResponse);
       }
+      
       $http.defaults = defaults;
+      _.forEach(['get', 'head', 'delete'], function (method) {
+        $http[method] = function (url, config) {
+          return $http(_.extend(config || {}, {
+            method: method.toUpperCase(),
+            url: url
+          }));
+        }
+      });
+      _.forEach(['post', 'put', 'patch'], function (method) {
+        $http[method] = function (url, data, config) {
+          return $http(_.extend(config || {}, {
+            method: method.toUpperCase(),
+            url: url,
+            data: data
+          }));
+        }
+      });
       return $http;
   }];
 }
@@ -271,40 +289,27 @@ function $httpParamSerializerJQLikeProvider() {
     return function serializeParams(params) {
       var parts = [];
 
-      function serialize(value, prefix) {
+      function serialize(value, prefix, topLevel) {
         if (_.isNull(value) || _.isUndefined(value)) {
           return;
         }
         if(_.isArray(value)) {
-          _forEach(value, function (v) {
-            serialize(v, prefix + '[]');
+          _.forEach(value, function (v, i) {
+            serialize(v, prefix + '[' + (_.isObject(v) ? i : '') + ']');
           });
         } else if (_.isObject(value) && !_.isDate(value)) {
           _.forEach(value, function (v, k) {
-            serialize(v, prefix + '[' + k + ']');
+            serialize(v, prefix + (topLevel ? '' : '[') +
+                                    k +
+                                    (topLevel ? '' : ']'));
           });
         } else {
           parts.push(encodeURIComponent(prefix) + '=' + encodeURIComponent(value));
         }
       }
 
-
-      _.forEach(params, function (value, key) {
-        if (_.isNull(value) || _.isUndefined(value)) {
-          return;
-        }
-        if (_.isArray(value)) {
-          _.forEach(value, function (v) {
-            serialize(v, key + '[]');
-          });
-        } else if (_.isObject(value) && !_.isDate(value)) {
-          _.forEach(value, function (v, k) {
-            serialize(v, key + '[' + k + ']');
-          });
-        } else {
-          parts.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
-        }
-      });
+      serialize(params, '', true);
+      
       return parts.join('&');
     };
   };
