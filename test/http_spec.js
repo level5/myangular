@@ -8,7 +8,7 @@ var createInjector = require('../src/injector');
 
 describe('$http', function () {
 
-  var $http, $rootScope;
+  var $http, $rootScope, $q;
   var xhr, requests;
 
   beforeEach(function () {
@@ -16,6 +16,7 @@ describe('$http', function () {
     var injector = createInjector(['ng']);
     $http = injector.get('$http');
     $rootScope = injector.get('$rootScope');
+    $q = injector.get('$q');
   });
 
   beforeEach(function () {
@@ -896,4 +897,254 @@ describe('$http', function () {
     $http = injector.get('$http');
     interceptorFactoryStub.called.should.be.true();
   });
+
+  it('allows intercepting requests.', function() {
+
+    var injector = createInjector(['ng', function ($httpProvider) {
+
+      $httpProvider.interceptors.push(function () {
+        return {
+          request: function (config) {
+            config.params.intercepted = true;
+            return config;
+          }
+        };
+      });
+    }]);
+    $http = injector.get('$http');
+    $rootScope = injector.get('$rootScope');
+
+    $http.get('http://level5.cn', {params: {}});
+    $rootScope.$apply();
+    requests[0].url.should.eql('http://level5.cn?intercepted=true');
+
+  });
+
+  it('allows returning promises from request intercepts', function () {
+
+    var injector = createInjector(['ng', function ($httpProvider) {
+
+      $httpProvider.interceptors.push(function ($q) {
+        return {
+          request: function (config) {
+            config.params.intercepted = true;
+            return $q.when(config);
+          }
+        };
+      });
+    }]);
+    $http = injector.get('$http');
+    $rootScope = injector.get('$rootScope');
+
+    $http.get('http://level5.cn', {params: {}});
+    $rootScope.$apply();
+    requests[0].url.should.eql('http://level5.cn?intercepted=true');
+
+  });
+
+  it('allows intercepting responses', function () {
+    var injector = createInjector(['ng', function ($httpProvider) {
+      $httpProvider.interceptors.push(_.constant({
+        response: function(response) {
+          response.intercepted = true;
+          return response;
+        }
+      }));
+    }]);
+
+    $http = injector.get('$http');
+    $rootScope = injector.get('$rootScope');
+
+    var response;
+    $http.get('http://level5.cn').then(function(r) {
+      response = r;
+    });
+    $rootScope.$apply();
+
+    requests[0].respond(200, {}, 'Hello');
+    response.intercepted.should.be.true();
+  });
+
+  it('allows intercepting request errors', function () {
+    var requestErrorSpy = sinon.spy();
+
+    var injector = createInjector(['ng', function ($httpProvider) {
+      $httpProvider.interceptors.push(_.constant({
+        request: function (config) {
+          throw 'fail';
+        }
+      }));
+      $httpProvider.interceptors.push(_.constant({
+        requestError: requestErrorSpy
+      }));
+    }]);
+
+    $http = injector.get('$http');
+    $rootScope = injector.get('$rootScope');
+
+    $http.get('http://level5.cn');
+    $rootScope.$apply();
+
+    requests.length.should.eql(0);
+    requestErrorSpy.calledWithExactly('fail');
+  });
+
+  it('allows intercepting reponse errors', function () {
+    var responseErrorSpy = sinon.spy();
+
+    var injector = createInjector(['ng', function ($httpProvider) {
+      $httpProvider.interceptors.push(_.constant({
+        responseError: responseErrorSpy
+      }));
+
+      $httpProvider.interceptors.push(_.constant({
+        response: function () {
+          throw 'fail';
+        }
+      }));
+    }]);
+
+    $http = injector.get('$http');
+    $rootScope = injector.get('$rootScope');
+
+    $http.get('http://level5.cn');
+    $rootScope.$apply();
+
+    requests[0].respond(200, {}, 'Hello');
+    $rootScope.$apply();
+
+    responseErrorSpy.calledWithExactly('fail');
+  });
+
+  it('allows attaching success handlers', function () {
+    var data, status, headers, config;
+    $http.get('http://level5.cn').success(function(d, s, h, c) {
+      data = d;
+      status = s;
+      headers = h;
+      config = c;
+    });
+    $rootScope.$apply();
+
+    requests[0].respond(200, {'Cache-Control': 'no-cache'}, 'Hello');
+    $rootScope.$apply();
+
+    data.should.eql('Hello');
+    status.should.eql(200);
+    headers('Cache-Control').should.eql('no-cache');
+    config.method.should.eql('GET');
+  });
+
+  it('allows attaching error handlers', function () {
+    var data, status, headers, config;
+    $http.get('http://level5.cn').error(function(d, s, h, c) {
+      data = d;
+      status = s;
+      headers = h;
+      config = c;
+    });
+    $rootScope.$apply();
+
+    requests[0].respond(401, {'Cache-Control': 'no-cache'}, 'Fail');
+    $rootScope.$apply();
+
+    data.should.eql('Fail');
+    status.should.eql(401);
+    headers('Cache-Control').should.eql('no-cache');
+    config.method.should.eql('GET');
+  });
+
+  it('allows aborting a request with a Promise', function () {
+    var timeout = $q.defer();
+    $http.get('http://level5.cn', {
+      timeout: timeout.promise
+    });
+    $rootScope.$apply();
+
+    timeout.resolve();
+    $rootScope.$apply();
+
+    requests[0].aborted.should.be.true();
+  });
+  var clock;
+  beforeEach(function () {
+    clock = sinon.useFakeTimers();
+  });
+
+  afterEach(function () {
+    clock.restore();
+  });
+
+  it('allows aborting a request after a timeout', function () {
+    $http.get('http://level5.cn', {
+      timeout: 5000
+    });
+
+    $rootScope.$apply();
+
+    clock.tick(5001);
+
+    requests[0].aborted.should.be.true();
+  });
+
+  describe('pending requests', function () {
+
+    it('are in the collection while pending', function () {
+      $http.get('http://level5.cn');
+      $rootScope.$apply();
+
+      $http.pendingRequests.should.be.Array();
+      $http.pendingRequests.length.should.eql(1);
+      $http.pendingRequests[0].url.should.eql('http://level5.cn');
+
+      requests[0].respond(200, {}, 'OK');
+      $rootScope.$apply();
+
+      $http.pendingRequests.length.should.eql(0);
+    });
+
+    it('are also cleared on failure', function () {
+      $http.get('http://level5.cn');
+      $rootScope.$apply();
+
+      requests[0].respond(404, {}, 'Not found');
+      $rootScope.$apply();
+
+      $http.pendingRequests.length.should.eql(0);
+    });
+
+  });
+
+  describe('useApplyAsync', function () {
+
+    beforeEach(function() {
+      var injector = createInjector((['ng', function($httpProvider) {
+        $httpProvider.useApplyAsync(true);
+      }]));
+
+      $http = injector.get('$http');
+      $rootScope = injector.get('$rootScope');
+    });
+
+    it('does not resolve promise immediately when enable', function () {
+      var resolvedSpy = sinon.spy();
+      $http.get('http://level5.cn').then(resolvedSpy);
+      $rootScope.$apply();
+
+      requests[0].respond(200, {}, 'OK');
+      resolvedSpy.called.should.be.false();
+    });
+
+    it('resolves promise later when enabled', function () {
+      var resolvedSpy = sinon.spy();
+      $http.get('http://level5.cn').then(resolvedSpy);
+      $rootScope.$apply();
+
+      requests[0].respond(200, {}, 'OK');
+      clock.tick(100);
+      resolvedSpy.called.should.be.true();
+    });
+
+  });
+
 });
