@@ -12,6 +12,40 @@ function directiveNormalize(name) {
   return _.camelCase(name.replace(PREFIX_REGXP, ''));
 }
 
+function byPriority(a, b) {
+    var diff = b.priority - a.priority;
+    if (diff !== 0) {
+      return diff;
+    } else {
+      if (a.name != b.name) {
+        return (a.name < b.name ? -1 : 1);
+      } else {
+        return a.index - b.index;
+      }
+    }
+}
+var BOOLEAN_ATTRS = {
+  multiple: true,
+  selected: true,
+  checked: true,
+  disabled: true,
+  readOnly: true,
+  required: true,
+  open: true
+};
+var BOOLEAN_ELEMENTS = {
+  INPUT: true,
+  SELECT: true,
+  OPTION: true,
+  TEXTAREA: true,
+  BUTTON: true,
+  FORM: true,
+  DETAILS: true
+};
+function isBooleanAttribute(node, attrName) {
+  return BOOLEAN_ATTRS[attrName] && BOOLEAN_ELEMENTS[node.nodeName];
+}
+
 function $CompileProvider($provide) {
 
   var hasDirectives = {};
@@ -25,11 +59,16 @@ function $CompileProvider($provide) {
         hasDirectives[name] = [];
         $provide.factory(name + 'Directive', ['$injector', function ($injector) {
           var factories = hasDirectives[name];
-          console.log(factories, 'XXX');
-          return _.map(factories, $injector.invoke);
+          return _.map(factories, function (factory, i) {
+            var directive = $injector.invoke(factory);
+            directive.restrict = directive.restrict || 'EA';
+            directive.name = directive.name || name;
+            directive.priority = directive.priority || 0;
+            directive.index = i;
+            return directive;
+          });
         }]);
       }
-      console.log('XXX', name, directiveFactory);
       hasDirectives[name].push(directiveFactory);
     } else {
       _.forEach(name, function (directiveFactory, name1) {
@@ -45,44 +84,133 @@ function $CompileProvider($provide) {
 
     function compileNodes($compileNodes) {
       _.forEach($compileNodes, function(node) {
-        var directives = collectDirectives(node);
-        applyDirectivesToNode(directives, node);
-        if(node.childNodes && node.childNodes.length) {
+        var attrs = {};
+        var directives = collectDirectives(node, attrs);
+        var terminal = applyDirectivesToNode(directives, node, attrs);
+        if(!terminal && node.childNodes && node.childNodes.length) {
           compileNodes(node.childNodes);
         }
       });
     }
 
-    function applyDirectivesToNode(directives, compileNode) {
+    function applyDirectivesToNode(directives, compileNode, attrs) {
       var $compileNode = $(compileNode);
+      var terminalPriority = - Number.MAX_VALUE;
+      var terminal = false;
       _.forEach(directives, function (directive) {
+        if (directive.$$start) {
+          $compileNode = groupScan(compileNode, directive.$$start, directive.$$end);
+        }
+        if (directive.priority < terminalPriority) {
+          return false;
+        }
+
         if (directive.compile) {
-          directive.compile($compileNode);
+          directive.compile($compileNode, attrs);
+        }
+        if (directive.terminal) {
+          terminal = true;
+          terminalPriority = directive.priority;
         }
       });
+      return terminal;
     }
 
-    function collectDirectives(node) {
+    function groupScan(node, startAttr, endAttr) {
+      var nodes = [];
+      if (startAttr && node && node.hasAttribute(startAttr)) {
+        var depth = 0;
+        do {
+          if (node.nodeType === node.ELEMENT_NODE) {
+            if (node.hasAttribute(startAttr)) {
+              depth++;
+            } else if (node.hasAttribute(endAttr)) {
+              depth--;
+            }
+          }
+          nodes.push(node);
+          node = node.nextSibling;
+        } while (depth > 0);
+      } else {
+        nodes.push(node);
+      }
+      return $(nodes);
+    }
+
+    function collectDirectives(node, attrs) {
       var directives = [];
-      var normalizedNodeName = directiveNormalize(nodeName(node).toLowerCase());
-      addDirective(directives, normalizedNodeName);
-      _.forEach(node.attributes, function(attr) {
-        var normalizedAttrName = directiveNormalize(attr.name.toLowerCase());
-        if (/^ngAttr[A-Z]/.test(normalizedAttrName)) {
-          normalizedAttrName =
-            normalizedAttrName[6].toLowerCase() + normalizedAttrName.substring(7);
+      if (node.nodeType === node.ELEMENT_NODE) {
+        // 元素名
+        var normalizedNodeName = directiveNormalize(nodeName(node).toLowerCase());
+        addDirective(directives, normalizedNodeName, 'E');
+        // 属性名
+        _.forEach(node.attributes, function(attr) {
+          var attrStartName, attrEndName;
+          var name = attr.name;
+          var normalizedAttrName = directiveNormalize(name.toLowerCase());
+          if (/^ngAttr[A-Z]/.test(normalizedAttrName)) {
+            name =
+              _.kebabCase(
+                normalizedAttrName[6].toLowerCase() + normalizedAttrName.substring(7)
+              );
+          }
+          var directiveNName = normalizedAttrName.replace(/(Start|End)$/, '');
+          if (directiveIsMultiElement(directiveNName)) {
+            if (/Start$/.test(normalizedAttrName)) {
+              attrStartName = name;
+              attrEndName = name.substring(0, name.length - 5) + 'end';
+              name = name.substring(0, name.length - 6);            }
+          }
+          normalizedAttrName = directiveNormalize(name.toLowerCase());
+          addDirective(directives, normalizedAttrName, 'A',
+                          attrStartName, attrEndName);
+          attrs[normalizedAttrName] = attr.value.trim();
+          if (isBooleanAttribute(node, normalizedAttrName)) {
+            attrs[normalizedAttrName] = true;
+          }
+        });
+        // 类名
+        _.forEach(node.classList, function(cls) {
+          var normalizedClassName = directiveNormalize(cls);
+          addDirective(directives, normalizedClassName, 'C');
+        });
+      } else if (node.nodeType === node.COMMENT_NODE){
+        var match = /^\s*directive\:\s*([\d\w\-_]+)/.exec(node.nodeValue);
+        if (match) {
+          addDirective(directives, directiveNormalize(match[1]), 'M');
         }
-        addDirective(directives, normalizedAttrName);
-      })
+      }
+      directives.sort(byPriority);
       return directives;
     }
 
-    function addDirective(directives, name) {
+    function directiveIsMultiElement(name) {
       if (hasDirectives.hasOwnProperty(name)) {
-        directives.push.apply(directives, $injector.get(name + 'Directive'));
+        var directives = $injector.get(name + 'Directive');
+        return _.some(directives, function (directive) {
+          return directive.multiElement === true;
+        });
       }
+      return false;
     }
 
+    function addDirective(directives, name, mode, attrStartName, attrEndName) {
+      if (hasDirectives.hasOwnProperty(name)) {
+        var foundDirectives = $injector.get(name + 'Directive');
+        var applicableDirectives = _.filter(foundDirectives, function (dir) {
+          return dir.restrict.indexOf(mode) !== -1;
+        });
+        _.forEach(applicableDirectives, function (directive) {
+          if (attrStartName) {
+            directive = _.create(directive, {
+              $$start: attrStartName,
+              $$end: attrEndName
+            });
+          }
+          directives.push(directive);
+        });
+      }
+    }
 
     return compile;
   }];
