@@ -24,10 +24,10 @@ function registerAndCompile(dirName, domString, callback) {
       }
     };
   });
-  injector.invoke(function ($compile) {
+  injector.invoke(function ($compile, $rootScope) {
     var el = $(domString);
     $compile(el);
-    callback(el, givenAttrs);
+    callback(el, givenAttrs, $rootScope);
   });
 }
 
@@ -719,6 +719,290 @@ describe('$compile', function () {
         '<input my-directive whatever>',
         function (element, attrs) {
           attrs.whatever.should.eql('');
+        }
+      );
+    });
+
+    it('overrides attributes with ng-atr- versions', function () {
+      registerAndCompile(
+        'myDirective',
+        '<input my-directive ng-attr-whatever="42" whatever="41">',
+        function (element, attrs) {
+          attrs.whatever.should.eql('42');
+        }
+      );
+    });
+
+    it('allows setting attributes', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive attr="true"></my-directive>',
+        function (element, attrs) {
+          attrs.$set('attr', 'false');
+          attrs.attr.should.eql('false');
+        }
+      );
+    });
+
+    it('sets attributes to DOM', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive attr="true"></my-directive>',
+        function (element, attrs) {
+          attrs.$set('attr', 'false');
+          element.attr('attr').should.eql('false');
+        }
+      );
+    });
+
+    it('does not set attributes to DOM when flag is false', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive attr="true"></my-directive>',
+        function (element, attrs) {
+          attrs.$set('attr', 'false', false);
+          element.attr('attr').should.eql('true');
+        }
+      );
+    });
+
+    it('shares attributes between directives', function () {
+      var attrs1, attrs2;
+      var injector = makeInjectorWithDirective({
+        myDir: function () {
+          return {
+            compile: function (element, attrs) {
+              attrs1 = attrs;
+            }
+          };
+        },
+        myOtherDir: function () {
+          return {
+            compile: function (element, attrs) {
+              attrs2 = attrs;
+            }
+          }
+        }
+      });
+      injector.invoke(function ($compile) {
+        var el = $('<div my-dir my-other-dir></div>');
+        $compile(el);
+        attrs1.should.be.exactly(attrs2);
+      })
+    });
+
+    it('sets prop for boolean attributes', function () {
+      registerAndCompile(
+        'myDirective',
+        '<input my-directive>',
+        function (element, attrs) {
+          attrs.$set('disabled', true);
+          element.prop('disabled').should.be.true();
+        }
+      );
+    });
+
+    it('sets prop for boolean attributes even when not flushing', function () {
+      registerAndCompile(
+        'myDirective',
+        '<input my-directive>',
+        function (element, attrs) {
+          attrs.$set('disabled', true, false);
+          element.prop('disabled').should.be.true();
+        }
+      );
+    });
+
+    it('denormalizes attribute name when explicitly given', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive some-attribute="42"></my-directive>',
+        function (element, attrs) {
+          attrs.$set('someAttribute', 43, true, 'some-attribute');
+          element.attr('some-attribute').should.eql('43');
+        }
+      );
+    });
+
+    it('denormalizes attribute by snake-casing', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive some-attribute="42"></my-directive>',
+        function (element, attrs) {
+          attrs.$set('someAttribute', 43);
+          element.attr('some-attribute').should.eql('43');
+        }
+      );
+    });
+
+    it('denormalizes attribute by using original attribute name', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive x-some-attribute="42"></my-directive>',
+        function (element, attrs) {
+          attrs.$set('someAttribute', 43);
+          element.attr('x-some-attribute').should.eql('43');
+        }
+      );
+    });
+
+    it('does not use ng-attr- prefix in denormalized name', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive ng-attr-some-attribute="42"></my-directive>',
+        function (element, attrs) {
+          attrs.$set('someAttribute', 43);
+          element.attr('some-attribute').should.eql('43');
+        }
+      );
+    });
+
+    it('uses new attribute name after once given', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive x-some-attribute="42"></my-directive>',
+        function (element, attrs) {
+          attrs.$set('someAttribute', 43, true, 'some-attribute');
+          attrs.$set('someAttribute', 44);
+
+          element.attr('some-attribute').should.eql('44');
+          element.attr('x-some-attribute').should.eql('42');
+        }
+      );
+    });
+
+    it('calls observer immediately when attribute is $set', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive some-attribute="42"></my-directive>',
+        function (eleent, attrs) {
+          var gotValue;
+          attrs.$observe('someAttribute', function (value) {
+            gotValue = value;
+          });
+          attrs.$set('someAttribute', '43');
+          gotValue.should.eql('43');
+        }
+      );
+    });
+
+    it('calls observer on next $digest after registration', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive some-attribute="42"></my-directive>',
+        function (element, attrs, $rootScope) {
+          var gotValue;
+          attrs.$observe('someAttribute', function (value) {
+            gotValue = value;
+          });
+
+          $rootScope.$digest();
+          gotValue.should.eql('42');
+        }
+      );
+    });
+
+    it('lets obserers be deregistered', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive some-attribute="42"></my-directive>',
+        function (element, attrs) {
+          var gotValue;
+          var remove = attrs.$observe('someAttribute', function (value) {
+            gotValue = value;
+          });
+          attrs.$set('someAttribute', '43');
+          gotValue.should.eql('43');
+          remove();
+          attrs.$set('someAttribute', '44');
+          gotValue.should.eql('43');
+        }
+      );
+    });
+
+    it('adds an attribute from a class directive', function () {
+      registerAndCompile(
+        'myDirective',
+        '<div class="my-directive"></div>',
+        function (element, attrs) {
+          attrs.hasOwnProperty('myDirective').should.be.true();
+        }
+      );
+    });
+
+    it('does not add attribute from class without a direcitve', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive class="some-class"></my-directive>',
+        function (element, attrs) {
+          attrs.hasOwnProperty('someClass').should.be.false();
+        }
+      );
+    });
+
+    it('supports values for class directive attributes', function () {
+      registerAndCompile(
+        'myDirective',
+        '<div class="my-directive: my attribute value"></div>',
+        function (element, attrs) {
+          attrs.myDirective.should.eql('my attribute value');
+        }
+      );
+    });
+
+    it('terminates class directive attribute value at semicolon', function () {
+      registerAndCompile(
+        'myDirective',
+        '<div class="my-directive: my attribute value; some-other-class"></div>',
+        function (element, attrs) {
+          attrs.myDirective.should.eql('my attribute value');
+        }
+      );
+    });
+
+    it('adds an attribute with a value from a comment directive', function () {
+      registerAndCompile(
+        'myDirective',
+        '<!-- directive: my-directive and the attribute value -->',
+        function (element, attrs) {
+          attrs.hasOwnProperty('myDirective').should.be.true();
+          attrs.myDirective.should.eql('and the attribute value');
+        }
+      );
+    });
+
+    it('allows adding classes', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive></my-directive>',
+        function (element, attrs) {
+          attrs.$addClass('some-class');
+          element.hasClass('some-class').should.be.true();
+        }
+      )
+    });
+
+    it('allows removing classes', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive class="some-class"></my-directive>',
+        function (element, attrs) {
+          attrs.$removeClass('some-class');
+          element.hasClass('some-class').should.be.false();
+        }
+      )
+    });
+
+    it('allows updating classes', function () {
+      registerAndCompile(
+        'myDirective',
+        '<my-directive class="one three four"></my-directive>',
+        function (element, attrs) {
+          attrs.$updateClass('one two three', 'one three four');
+          element.hasClass('one').should.be.true();
+          element.hasClass('two').should.be.true();
+          element.hasClass('three').should.be.true();
+          element.hasClass('four').should.be.false();
         }
       );
     });
