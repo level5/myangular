@@ -1300,7 +1300,7 @@ describe('$compile', function () {
     });
 
     it('creates an isolate scope when requested', function () {
-      var givenscope;
+      var givenScope;
       var injector = makeInjectorWithDirective('myDirective', function () {
         return {
           scope: {},
@@ -1337,6 +1337,91 @@ describe('$compile', function () {
         var el = $('<div my-directive my-other-directive></div>')
         $compile(el)($rootScope);
         givenScope.should.be.exactly($rootScope);
+      });
+    });
+
+    it('does not use isolate scope on child elements', function () {
+      var givenScope;
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            scope: {}
+          };
+        },
+        myOtherDirective: function () {
+          return {
+            link: function (scope) {
+              givenScope = scope;
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive><div my-other-directive></div></div>');
+        $compile(el)($rootScope);
+        givenScope.should.equal($rootScope);
+      });
+
+    });
+
+    it('does not allow two isolate scope directives on an element', function () {
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            scope: {}
+          };
+        },
+        myOtherDirective: function () {
+          return {
+            scope: {}
+          }
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-other-directive></div>');
+        (function() {
+          $compile(el);
+        }).should.throw();
+      });
+    });
+
+    it('does not allow both isolate and inherited scope on an element', function () {
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            scope: {}
+          };
+        },
+        myOtherDirective: function () {
+          return {
+            scope: true
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-other-directive></div>');
+        (function () {
+          $compile(el);
+        }).should.throw();
+      })
+    });
+
+    it('adds clas and data for element with isolated scope', function () {
+      var givenScope;
+      var injector = makeInjectorWithDirective('myDirective', function () {
+        return {
+          scope: {},
+          link: function (scope) {
+            givenScope = scope;
+          }
+        };
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive></div>');
+        $compile(el)($rootScope);
+        el.hasClass('ng-isolate-scope').should.be.true();
+        el.hasClass('ng-scope').should.be.false();
+        el.data('isolateScope').should.be.exactly(givenScope);
       });
     });
 
