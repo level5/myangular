@@ -1425,6 +1425,148 @@ describe('$compile', function () {
       });
     });
 
+    it('allows observing attribute to the isolate scope.', function () {
+      var givenScope, givenAttrs;
+      var injector = makeInjectorWithDirective('myDirective', function () {
+        return {
+          scope: {
+            anAttr: '@'
+          },
+          link: function (scope, element, attrs) {
+            givenScope = scope;
+            givenAttrs = attrs;
+          }
+        };
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive></div>');
+        $compile(el)($rootScope);
+
+        givenAttrs.$set('anAttr', '42');
+        givenScope.anAttr.should.eql('42');
+      });
+    });
+
+    it('sets initial value of observed attr to the isolate scope', function () {
+      var givenScope;
+      var injector = makeInjectorWithDirective('myDirective', function () {
+        return {
+          scope: {
+            anAttr: '@'
+          },
+          link: function (scope, element, attrs) {
+            givenScope = scope;
+          }
+        };
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive an-attr="42"></div>');
+        $compile(el)($rootScope);
+
+        givenScope.anAttr.should.eql('42');
+      });
+    });
+
+    it('allows aliasing observed attribute', function () {
+      var givenScope;
+      var injector = makeInjectorWithDirective('myDirective', function () {
+        return {
+          scope: {
+            aScopeAttr: '@anAttr'
+          },
+          link: function (scope, element, attrs) {
+            givenScope = scope;
+          }
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive an-attr="42"></div>');
+        $compile(el)($rootScope);
+
+        givenScope.aScopeAttr.should.eql('42');
+      });
+    });
+
+    it('allows binding expression to isolate scope', function () {
+      var givenScope;
+      var injector = makeInjectorWithDirective('myDirective', function () {
+        return {
+          scope: {
+            anAttr: '='
+          },
+          link: function (scope) {
+            givenScope = scope;
+          }
+        };
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive an-attr="42"></div>');
+        $compile(el)($rootScope);
+        givenScope.anAttr.should.eql(42);
+      });
+    });
+
+    it('allows aliasing expression attribute on isolate scope', function () {
+      var givenScope;
+      var injector = makeInjectorWithDirective('myDirective', function () {
+        return {
+          scope: {
+            anAttr: '=theAttr'
+          },
+          link: function (scope) {
+            givenScope = scope;
+          }
+        };
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive the-attr="42"></div>');
+        $compile(el)($rootScope);
+        givenScope.anAttr.should.eql(42);
+      });
+    });
+
+    it('evaluates isolate scope expression on parent scope', function () {
+      var givenScope;
+      var injector = makeInjectorWithDirective('myDirective', function () {
+        return {
+          scope: {
+            myAttr: '='
+          },
+          link: function (scope) {
+            givenScope = scope;
+          }
+        };
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        $rootScope.parentAttr = 41;
+        var el = $('<div my-directive my-attr="parentAttr + 1"></div>');
+        $compile(el)($rootScope);
+        givenScope.myAttr.should.eql(42);
+      });
+    });
+
+    it('allows assigning to isolated scope expressions', function () {
+      var givenScope;
+      var injector = makeInjectorWithDirective('myDirective', function () {
+        return {
+          scope: {
+            myAttr: '='
+          },
+          link: function (scope) {
+            givenScope = scope;
+          }
+        };
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-attr="parentAttr"></div>');
+        $compile(el)($rootScope);
+        givenScope.myAttr = 42;
+        $rootScope.$digest();
+        $rootScope.parentAttr.should.eql(42);
+      });
+
+    })
+
   });
 
 });

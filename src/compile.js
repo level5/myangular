@@ -46,6 +46,18 @@ function isBooleanAttribute(node, attrName) {
   return BOOLEAN_ATTRS[attrName] && BOOLEAN_ELEMENTS[node.nodeName];
 }
 
+function parseIsolateBindings(scope) {
+  var bindings = {};
+  _.forEach(scope, function (definition, scopeName) {
+    var match = definition.match(/\s*([@=])\s*(\w*)\s*/);
+    bindings[scopeName] = {
+      mode: match[1],
+      attrName: match[2] || scopeName
+    };
+  });
+  return bindings;
+}
+
 function $CompileProvider($provide) {
 
   var hasDirectives = {};
@@ -66,6 +78,9 @@ function $CompileProvider($provide) {
             if (directive.link && !directive.compile) {
               directive.compile = _.constant(directive.link);
             }
+            if (_.isObject(directive.scope)) {
+              directive.$$isolateBindings = parseIsolateBindings(directive.scope);
+            }
             directive.name = directive.name || name;
             directive.index = i;
             return directive;
@@ -80,7 +95,7 @@ function $CompileProvider($provide) {
     }
   };
 
-  this.$get = ['$injector', '$rootScope', function ($injector, $rootScope) {
+  this.$get = ['$injector', '$parse', '$rootScope', function ($injector, $parse, $rootScope) {
 
     function Attributes(element) {
       this.$$element = element;
@@ -291,6 +306,24 @@ function $CompileProvider($provide) {
           isolateScope = scope.$new(true);
           $element.addClass('ng-isolate-scope');
           $element.data('isolateScope', isolateScope);
+          _.forEach(newIsolateScopeDirective.$$isolateBindings,
+            function (definition, scopeName) {
+              var attrName = definition.attrName;
+              switch (definition.mode) {
+                case '@':
+                  attrs.$observe(attrName, function (newAttrValue) {
+                    isolateScope[scopeName] = newAttrValue;
+                  });
+                  if (attrs[attrName]) {
+                    isolateScope[scopeName] = attrs[attrName];
+                  }
+                  break;
+                case '=':
+                  var parentGet = $parse(attrs[attrName]);
+                  isolateScope[scopeName] = parentGet(scope);
+                  break;
+              }
+            })
         }
 
         _.forEach(preLinkFns, function (linkFn) {
