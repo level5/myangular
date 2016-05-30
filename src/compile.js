@@ -320,7 +320,21 @@ function $CompileProvider($provide) {
                   break;
                 case '=':
                   var parentGet = $parse(attrs[attrName]);
-                  isolateScope[scopeName] = parentGet(scope);
+                  var lastValue = isolateScope[scopeName] = parentGet(scope);
+                  var parentValueWatch = function () {
+                    var parentValue  = parentGet(scope);
+                    if (isolateScope[scopeName] !== parentValue) {
+                      if (parentValue !== lastValue) {
+                        isolateScope[scopeName] = parentValue;
+                      } else {
+                        parentValue = isolateScope[scopeName];
+                        parentGet.assign(scope, parentValue);
+                      }
+                    }
+                    lastValue = parentValue;
+                    return parentValue;
+                  };
+                  scope.$watch(parentValueWatch);
                   break;
               }
             })

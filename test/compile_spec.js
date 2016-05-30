@@ -1565,8 +1565,31 @@ describe('$compile', function () {
         $rootScope.parentAttr.should.eql(42);
       });
 
-    })
+    });
 
+    it('gives parent change precedence when both parent and child change', function () {
+      var givenScope;
+      var injector = makeInjectorWithDirective('myDirective', function () {
+        return {
+          scope: {
+            myAttr: '='
+          },
+          link: function (scope) {
+            givenScope = scope;
+          }
+        };
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-attr="parentAttr"></div>');
+        $compile(el)($rootScope);
+        $rootScope.parentAttr = 42;
+        givenScope.myAttr = 43;
+        $rootScope.$digest();
+        givenScope.myAttr.should.eql(42);
+        $rootScope.parentAttr.should.eql(42);
+      });
+
+    });
   });
 
 });
