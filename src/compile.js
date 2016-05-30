@@ -49,10 +49,12 @@ function isBooleanAttribute(node, attrName) {
 function parseIsolateBindings(scope) {
   var bindings = {};
   _.forEach(scope, function (definition, scopeName) {
-    var match = definition.match(/\s*([@=])\s*(\w*)\s*/);
+    var match = definition.match(/\s*([@&]|=(\*?))(\??)\s*(\w*)\s*/);
     bindings[scopeName] = {
-      mode: match[1],
-      attrName: match[2] || scopeName
+      mode: match[1][0],
+      collection: match[2] === '*',
+      optional: match[3],
+      attrName: match[4] || scopeName
     };
   });
   return bindings;
@@ -319,6 +321,9 @@ function $CompileProvider($provide) {
                   }
                   break;
                 case '=':
+                  if (definition.optional && !attrs[attrName]) {
+                    break;
+                  }
                   var parentGet = $parse(attrs[attrName]);
                   var lastValue = isolateScope[scopeName] = parentGet(scope);
                   var parentValueWatch = function () {
@@ -334,8 +339,24 @@ function $CompileProvider($provide) {
                     lastValue = parentValue;
                     return parentValue;
                   };
-                  scope.$watch(parentValueWatch);
+                  var unwatch;
+                  if (definition.collection) {
+                    unwatch = scope.$watchCollection(attrs[attrName], parentValueWatch);
+                  } else {
+                    unwatch = scope.$watch(parentValueWatch);
+                  }
+                  isolateScope.$on('$destroy', unwatch);
                   break;
+                case '&':
+                  var parentExpr = $parse(attrs[attrName]);
+                  if (parentExpr === _.noop && definition.optional) {
+                    break;
+                  }
+                  isolateScope[scopeName] = function (locals) {
+                    return parentExpr(scope, locals);
+                  };
+                  break;
+
               }
             })
         }
