@@ -121,4 +121,55 @@ describe('$controller', function () {
     controller.should.be.instanceOf(window.MyController);
   });
 
+  it('can return a semi-constructed controller', function () {
+    var injector = createInjector(['ng']);
+    var $controller = injector.get('$controller');
+
+    function MyController() {
+      this.constructed = true;
+      this.myAttrWhenConstructed = this.myAttr;
+    }
+
+    var controller = $controller(MyController, null, true);
+
+    should(controller.constructed).be.undefined();
+    controller.instance.should.be.Object();
+
+    controller.instance.myAttr = 42;
+    var actualController = controller();
+
+    actualController.constructed.should.be.true();
+    actualController.myAttrWhenConstructed.should.eql(42);
+    // actualController.should.be.instanceOf(MyController);
+  });
+
+  it('can return a semi-constructed ctrl when using array injection', function () {
+    var injector = createInjector(['ng', function ($provide) {
+      $provide.constant('aDep', 42);
+    }]);
+    var $controller = injector.get('$controller');
+
+    function MyController(aDep) {
+      this.aDep = aDep;
+      this.constructed = true;
+    }
+
+    var controller = $controller(['aDep', MyController], null, true);
+    should(controller.constructed).be.undefined();
+    var actualController = controller();
+    actualController.constructed.should.be.true();
+    actualController.aDep.should.eql(42);
+  });
+
+  it('can bind semi-constructed controller to scope', function () {
+    var injector = createInjector(['ng']);
+    var $controller = injector.get('$controller');
+
+    function MyController() { }
+    
+    var scope = {};
+    var controller = $controller(MyController, {$scope: scope}, true, 'myCtrl');
+    scope.myCtrl.should.eql(controller.instance);
+  });
+
 });

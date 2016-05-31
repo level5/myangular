@@ -1903,6 +1903,57 @@ describe('$compile', function () {
       });
     });
 
+    it('has isolate scope bindings available during construction', function () {
+      var gotMyAttr;
+      function MyController($scope) {
+        gotMyAttr = $scope.myAttr;
+      }
+
+      var injector = createInjector(['ng', function ($controllerProvider, $compileProvider) {
+        $controllerProvider.register('MyController', MyController);
+        $compileProvider.directive('myDirective', function () {
+          return {
+            scope: {
+              myAttr: '@myDirective'
+            },
+            controller: 'MyController'
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive="abc"></div>');
+        $compile(el)($rootScope);
+        gotMyAttr.should.eql('abc');
+      });
+    });
+
+    it('can bind isolate scope bindings directly to self', function () {
+      var gotMyAttr;
+      function MyController() {
+        gotMyAttr = this.myAttr;
+      }
+
+      var injector = createInjector(['ng', function ($controllerProvider, $compileProvider) {
+        $controllerProvider.register('MyController', MyController);
+        $compileProvider.directive('myDirective', function () {
+          return {
+            scope: {
+              myAttr: '@myDirective'
+            },
+            controller: 'MyController',
+            bindToController: true
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive="abc"></div>');
+        $compile(el)($rootScope);
+        gotMyAttr.should.eql('abc');
+      });
+    });
+
+    
+
   });
 
 });
