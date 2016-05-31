@@ -60,7 +60,13 @@ describe('angularPublic', function () {
     publishExternalAPI();
     var injector = createInjector(['ng']);
     injector.has('$compile').should.be.true();
-  })
+  });
+
+  it('sets up $controller', function () {
+    publishExternalAPI();
+    var injector = createInjector(['ng']);
+    injector.has('$controller').should.be.true();
+  });
 
 
 });
