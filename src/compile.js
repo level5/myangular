@@ -311,10 +311,17 @@ function $CompileProvider($provide) {
       function nodeLinkFn(childLinkFn, scope, linkNode) {
         var $element = $(linkNode);
 
+        var isolateScope;
+        if (newIsolateScopeDirective) {
+          isolateScope = scope.$new(true);
+          $element.addClass('ng-isolate-scope');
+          $element.data('isolateScope', isolateScope);
+        }
+
         if (controllerDirectives) {
           _.forEach(controllerDirectives, function(directive) {
             var locals = {
-              $scope: scope,
+              $scope: directive === newIsolateScopeDirective ? isolateScope : scope,
               $element: $element,
               $attrs: attrs
             };
@@ -322,15 +329,11 @@ function $CompileProvider($provide) {
             if (controllerName === '@') {
               controllerName = attrs[directive.name];
             }
-            $controller(controllerName, locals);
+            $controller(controllerName, locals, directive.controllerAs);
           });
         }
 
-        var isolateScope;
         if (newIsolateScopeDirective) {
-          isolateScope = scope.$new(true);
-          $element.addClass('ng-isolate-scope');
-          $element.data('isolateScope', isolateScope);
           _.forEach(newIsolateScopeDirective.$$isolateBindings,
             function (definition, scopeName) {
               var attrName = definition.attrName;
