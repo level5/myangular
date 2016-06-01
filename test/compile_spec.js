@@ -2137,6 +2137,87 @@ describe('$compile', function () {
       })
     });
 
+    it('finds from sibling directive when requiring with parent prefix', function () {
+      function MyController() {}
+      var gotMyController;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            scope: {},
+            controller: MyController
+          };
+        });
+        $compileProvider.directive('myOtherDirective', function () {
+          return {
+            require: '^myDirective',
+            link: function (scope, element, attrs, myController) {
+              gotMyController = myController;
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-other-directive></div>');
+        $compile(el)($rootScope);
+        gotMyController.should.be.Object();
+        gotMyController.should.be.instanceOf(MyController);
+      });
+    });
+
+    it('can be required from a parent directive with ^^', function () {
+      function MyController() {}
+      var gotMyController;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            scope: {},
+            controller: MyController
+          };
+        });
+        $compileProvider.directive('myOtherDirective', function () {
+          return {
+            require: '^^myDirective',
+            link: function (scope, element, attrs, myController) {
+              gotMyController = myController;
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive><div my-other-directive></div></div>');
+        $compile(el)($rootScope);
+        gotMyController.should.be.Object();
+        gotMyController.should.be.instanceOf(MyController);
+      });
+    });
+
+    it('does not find from sibling directive when requiring with ^^', function () {
+      function MyController() {}
+      var gotMyController;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            scope: {},
+            controller: MyController
+          };
+        });
+        $compileProvider.directive('myOtherDirective', function () {
+          return {
+            require: '^^myDirective',
+            link: function (scope, element, attrs, myController) {
+              gotMyController = myController;
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-other-directive></div>');
+        (function() {
+          $compile(el)($rootScope);
+        }).should.throw();
+      });
+    });
+
   });
 
 });
