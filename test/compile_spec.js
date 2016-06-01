@@ -1952,7 +1952,190 @@ describe('$compile', function () {
       });
     });
 
-    
+    it('can bind isolate scope bindings through bindToController', function () {
+      var gotMyAttr;
+      function MyController() {
+        gotMyAttr = this.myAttr;
+      }
+
+      var injector = createInjector(['ng', function ($controllerProvider, $compileProvider) {
+        $controllerProvider.register('MyController', MyController);
+        $compileProvider.directive('myDirective', function() {
+          return {
+            scope: {},
+            controller: 'MyController',
+            bindToController: {
+              myAttr: '@myDirective'
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive="abc"></div>');
+        $compile(el)($rootScope);
+        gotMyAttr.should.eql('abc');
+      });
+    });
+
+    it('can bind through bindToController without isolate scope', function () {
+      var gotMyAttr;
+      function MyController() {
+        gotMyAttr = this.myAttr;
+      }
+
+      var injector = createInjector(['ng', function ($controllerProvider, $compileProvider) {
+        $controllerProvider.register('MyController', MyController);
+        $compileProvider.directive('myDirective', function() {
+          return {
+            scope: true,
+            controller: 'MyController',
+            bindToController: {
+              myAttr: '@myDirective'
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive="abc"></div>');
+        $compile(el)($rootScope);
+        gotMyAttr.should.eql('abc');
+      });
+    });
+
+    it('can be required from a sibling directive', function () {
+      function MyController() {}
+      var gotMyController;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            scope: {},
+            controller: MyController
+          };
+        });
+        $compileProvider.directive('myOtherDirective', function () {
+          return {
+            require: 'myDirective',
+            link: function (scope, element, attrs, myController) {
+              gotMyController = myController;
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-other-directive></div>');
+        $compile(el)($rootScope);
+        gotMyController.should.be.Object();
+        gotMyController.should.be.instanceOf(MyController);
+      });
+    });
+
+    it('can be required from multiple sibling directives', function () {
+      function MyController() {}
+      function MyOtherController() {}
+      var gotControllers;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            scope: true,
+            controller: MyController
+          };
+        });
+        $compileProvider.directive('myOtherDirective', function () {
+          return {
+            scope: true,
+            controller: MyOtherController
+          };
+        });
+        $compileProvider.directive('myThirdDirective', function () {
+          return {
+            require: ['myDirective', 'myOtherDirective'],
+            link: function (scope, element, attrs, controllers) {
+              gotControllers = controllers;
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-other-directive my-third-directive></div>');
+        $compile(el)($rootScope);
+        gotControllers.should.be.Array();
+        gotControllers.length.should.eql(2)
+        gotControllers[0].should.be.instanceOf(MyController);
+        gotControllers[1].should.be.instanceOf(MyOtherController);
+      });
+    });
+
+    it('is passed to link functions if there is no require', function () {
+      function MyController() {}
+      var gotMyController;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            scope: {},
+            controller: MyController,
+            link: function (scope, element, attrs, myController) {
+              gotMyController = myController;
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive></div>');
+        $compile(el)($rootScope);
+        gotMyController.should.be.Object();
+        gotMyController.should.be.instanceOf(MyController);
+      });
+    });
+
+    it('is passed through grouped link wrapper', function () {
+      function MyController() {}
+      var gotMyController;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            multiElement: true,
+            scope: {},
+            controller: MyController,
+            link: function (scope, element, attrs, myController) {
+              gotMyController = myController;
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive-start></div><div my-directive-end></div>');
+        $compile(el)($rootScope);
+        gotMyController.should.be.Object();
+        gotMyController.should.be.instanceOf(MyController);
+      });
+    });
+
+    it('can be required from a parent directive', function () {
+      function MyController() {}
+      var gotMyController;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            scope: {},
+            controller: MyController
+          };
+        });
+        $compileProvider.directive('myOtherDirective', function () {
+          return {
+            require: '^myDirective',
+            link: function (scope, element, attrs, myController) {
+              gotMyController = myController;
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive><div my-other-directive></div></div>');
+        $compile(el)($rootScope);
+        gotMyController.should.be.Object();
+        gotMyController.should.be.instanceOf(MyController);
+      })
+    });
 
   });
 
