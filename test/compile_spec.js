@@ -2218,6 +2218,71 @@ describe('$compile', function () {
       });
     });
 
+    it('does not throw on required missing controller when optional', function () {
+      var gotCtrl;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            require: '?noSuchDirective',
+            link: function (scope, element, attrs, ctrl) {
+              gotCtrl = ctrl;
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive></div>');
+        $compile(el)($rootScope);
+        should(gotCtrl).be.null();
+      });
+
+    });
+
+    it('allows optional marker after parent marker', function () {
+      var gotCtrl;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            require: '^?noSuchDirective',
+            link: function functionName(scope, element, attrs, ctrl) {
+              gotCtrl = ctrl;
+            }
+          }
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive></div>');
+        $compile(el)($rootScope);
+        should(gotCtrl).be.null();
+      });
+    });
+
+    it('allows optional marker before parent marker', function () {
+      function MyController() {}
+      var gotMyController;
+      var injector = createInjector(['ng', function ($compileProvider) {
+        $compileProvider.directive('myDirective', function () {
+          return {
+            scope: {},
+            controller: MyController
+          };
+        });
+        $compileProvider.directive('myOtherDirective', function () {
+          return {
+            require: '?^myDirective',
+            link: function (scope, element, attrs, ctrl) {
+              gotMyController = ctrl;
+            }
+          };
+        });
+      }]);
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-other-directive></div>');
+        $compile(el)($rootScope);
+        gotMyController.should.be.Object();
+        gotMyController.should.be.instanceOf(MyController);
+      });
+    });
   });
 
 });

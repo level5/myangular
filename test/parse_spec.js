@@ -7,9 +7,9 @@ var publishExternalAPI = require('../src/angular_public');
 var createInjector = require('../src/injector');
 
 describe('parse', function() {
-  
+
   var parse;
-  
+
   beforeEach(function() {
     publishExternalAPI();
     parse = createInjector(['ng']).get('$parse');
@@ -695,7 +695,7 @@ describe('parse', function() {
         };
       });
     }]).get('$parse');
-    
+
     var fn = parse('"hello" | repeat:3');
     fn().should.eql('hellohellohello');
   });
@@ -739,12 +739,12 @@ describe('parse', function() {
 
   it('marks arrays literal', function() {
     var fn = parse('[1, 2, aVariable]');
-    fn.literal.should.be.true;
+    fn.literal.should.be.true();
   });
 
   it('marks objects literal', function() {
     var fn = parse('{a: 1, b: aVariable}');
-    fn.literal.should.be.true;
+    fn.literal.should.be.true();
   });
 
   it('marks unary expressions non-literal.', function() {
@@ -794,71 +794,71 @@ describe('parse', function() {
   it('marks this as non-constant', function() {
     parse('this').constant.should.be.false();
   });
-  
+
   it('marks non-computed lookup constant when object is constant', function() {
     parse('{a: 1}.a').constant.should.be.true();
     parse('obj.a').constant.should.be.false();
   });
-  
+
   it('marks computed lookup constant when object and key are', function() {
     parse('{a: 1}["a"]').constant.should.be.true();
     parse('obj["a"]').constant.should.be.false();
     parse('{a: 1}[something]').constant.should.be.false();
     parse('obj[something]').constant.should.be.false();
   });
-  
+
   it('marks function calls non-constant', function () {
     parse('aFunction()').constant.should.be.false();
   });
-  
+
   it('marks filters constant if arguments are', function () {
     parse = createInjector(['ng', function ($filterProvider) {
       $filterProvider.register('aFilter', function() {
         return _.identity;
       });
     }]).get('$parse');
-    
+
     parse('[1, 2, 3] | aFilter').constant.should.be.true();
     parse('[1, 2, a] | aFilter').constant.should.be.false();
     parse('[1, 2, 3] | aFilter:42').constant.should.be.true();
     parse('[1, 2, 3] | aFilter:a').constant.should.be.false();
   });
-  
+
   it('marks assignments constant when both sides are', function() {
     parse('1 = 2').constant.should.be.true();
     parse('a = 2').constant.should.be.false();
     parse('1 = b').constant.should.be.false();
     parse('a = b').constant.should.be.false();
   });
-  
+
   it('marks unaries constant when arguments are constant.', function() {
     parse('+42').constant.should.be.true();
     parse('+a').constant.should.be.false();
   });
-  
+
   it('marks binaries constant when both arguments are constant.', function() {
     parse('1 + 2').constant.should.be.true();
     parse('1 + 2').literal.should.be.false();
-    
+
     parse('1 + a').constant.should.be.false();
     parse('a + 1').constant.should.be.false();
     parse('a + a').constant.should.be.false();
   });
-  
+
   it('marks logicals constant when both arguments are cosntant.', function() {
     parse('true && false').constant.should.be.true();
     parse('true && false').literal.should.be.false();
-    
+
     parse('true && a').constant.should.be.false();
     parse('true && a').literal.should.be.false();
-    
+
     parse('a && false').constant.should.be.false();
     parse('a && false').literal.should.be.false();
-  
+
     parse('a && b').constant.should.be.false();
-    parse('a && b').literal.should.be.false();  
+    parse('a && b').literal.should.be.false();
   });
-  
+
   it('marks ternaries constant when all arguments are', function() {
     parse('true ? 1 : 2').constant.should.true();
     parse('a ? 1: 2').constant.should.be.false();
@@ -866,20 +866,20 @@ describe('parse', function() {
     parse('true ? 1: b').constant.should.be.false();
     parse('a ? b: c').constant.should.be.false();
   });
-  
+
   it('allows calling assign on identifier expressions.', function () {
     var fn = parse('anAttribute');
     fn.assign.should.not.be.undefined();
-    
+
     var scope = {};
     fn.assign(scope, 42);
     scope.anAttribute.should.eql(42);
   });
-  
+
   it('allows calling assign on member expressions.', function() {
     var fn = parse('anObject.anAttribute');
     fn.assign.should.not.be.undefined();
-    
+
     var scope = {};
     fn.assign(scope, 42);
     scope.anObject.should.eql({anAttribute: 42});
