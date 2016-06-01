@@ -41,6 +41,9 @@ function $ControllerProvider() {
       if (later) {
         var ctrlConstructor = _.isArray(ctrl) ? _.last(ctrl) : ctrl;
         instance = Object.create(ctrlConstructor.prototype);
+        if (identifier) {
+          addToScope(locals, identifier, instance);
+        }
         return _.extend(function () {
           $injector.invoke(ctrl, instance, locals);
           return instance;

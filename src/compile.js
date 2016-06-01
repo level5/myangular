@@ -241,7 +241,7 @@ function $CompileProvider($provide) {
       var $compileNode = $(compileNode);
       var terminalPriority = - Number.MAX_VALUE;
       var terminal = false;
-      var preLinkFns = [], postLinkFns = [];
+      var preLinkFns = [], postLinkFns = [], controllers = {};
       var newScopeDirective, newIsolateScopeDirective;
       var controllerDirectives;
 
@@ -329,7 +329,8 @@ function $CompileProvider($provide) {
             if (controllerName === '@') {
               controllerName = attrs[directive.name];
             }
-            $controller(controllerName, locals, false, directive.controllerAs);
+            controllers[directive.name] =
+              $controller(controllerName, locals, true, directive.controllerAs);
           });
         }
 
@@ -386,6 +387,10 @@ function $CompileProvider($provide) {
               }
             })
         }
+
+        _.forEach(controllers, function (controller) {
+          controller();
+        });
 
         _.forEach(preLinkFns, function (linkFn) {
           linkFn(linkFn.isolateScope ? isolateScope : scope, $element, attrs);
