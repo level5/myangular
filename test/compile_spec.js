@@ -2500,6 +2500,65 @@ describe('$compile', function () {
       });
     });
 
+    it('compiles currrent directive when template received', function () {
+      var compileSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            templateUrl: '/my_directive.html',
+            compile: compileSpy
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive></div>');
+
+        $compile(el);
+        $rootScope.$apply();
+
+        requests[0].respond(200, {}, '<div class="from-template"></div>');
+        compileSpy.called.should.be.true();
+      });
+
+
+    });
+
+    it('resumes compilation when template received', function () {
+      var otherCompileSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {templateUrl: '/my_directive.html'};
+        },
+        myOtherDirective: function () {
+          return {compile: otherCompileSpy};
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-other-directive></div>');
+
+        $compile(el);
+        $rootScope.$apply();
+        requests[0].respond(200, {}, '<div class="from-template"></div>');
+        otherCompileSpy.called.should.be.true();
+      })
+
+    });
+
+    it('resumes child compilation after template received', function () {
+      var otherCompileSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {templateUrl: '/my_directive.html'}
+        },
+        myOtherDirective: function () {
+          return {compile: otherCompileSpy};
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div></div>')
+      });
+    });
+
   });
 
 });
