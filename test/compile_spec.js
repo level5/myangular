@@ -2401,6 +2401,20 @@ describe('$compile', function () {
 
   describe('templateUrl', function () {
 
+    var xhr, requests;
+
+    beforeEach(function () {
+      xhr = sinon.useFakeXMLHttpRequest();
+      requests = [];
+      xhr.onCreate = function (req) {
+        requests.push(req);
+      };
+    });
+
+    afterEach(function () {
+      xhr.restore();
+    })
+
     it('defers remaining directive compilation', function () {
       var otherCompileSpy = sinon.spy();
       var injector = makeInjectorWithDirective({
@@ -2433,6 +2447,57 @@ describe('$compile', function () {
         $compile(el);
         compileSpy.called.should.be.false();
       })
+    });
+
+    it('immediately empites out the element', function () {
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {templateUrl: '/my_directive.html'};
+        }
+      });
+      injector.invoke(function ($compile) {
+        var el = $('<div my-directive>Hello</div>');
+        $compile(el);
+        el.is(':empty').should.be.true();
+      });
+    });
+
+    it('fetch the template', function () {
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {templateUrl: '/my_directive.html'};
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive></div>');
+
+        $compile(el);
+        // 为什么要tick off Promise chain？ 不是应该自己触发吗？
+        // 确实已经是这样了，因为config是通过promise返回的。
+        // ？？？
+        $rootScope.$apply();
+
+        requests.length.should.eql(1);
+        requests[0].method.should.eql('GET');
+        requests[0].url.should.eql('/my_directive.html');
+      });
+    });
+
+    it('populates element with template', function () {
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {templateUrl: '/my_directive.html'}
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive></div>');
+
+        $compile(el);
+        $rootScope.$apply();
+
+        requests[0].respond(200, {}, '<div class="from-template"></div>');
+        el.find('> .from-template').length.should.eql(1);
+      });
     });
 
   });

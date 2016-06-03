@@ -113,8 +113,8 @@ function $CompileProvider($provide) {
     }
   };
 
-  this.$get = ['$injector', '$parse', '$controller', '$rootScope',
-    function ($injector, $parse, $controller, $rootScope) {
+  this.$get = ['$injector', '$parse', '$controller', '$rootScope', '$http',
+    function ($injector, $parse, $controller, $rootScope, $http) {
 
     function Attributes(element) {
       this.$$element = element;
@@ -353,6 +353,7 @@ function $CompileProvider($provide) {
         }
 
         if (directive.templateUrl) {
+          compileTemplateUrl(directive, $compileNode);
           return false;
         } else if (directive.compile) {
           var linkFn = directive.compile($compileNode, attrs);
@@ -461,6 +462,13 @@ function $CompileProvider($provide) {
       nodeLinkFn.terminal = terminal;
       nodeLinkFn.scope = newScopeDirective && newScopeDirective.scope;
       return nodeLinkFn;
+    }
+
+    function compileTemplateUrl(directive, $compileNode) {
+      $compileNode.empty();
+      $http.get(directive.templateUrl).success(function (template) {
+        $compileNode.html(template);
+      });
     }
 
     function initializeDirectiveBindings(
