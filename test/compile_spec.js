@@ -2555,9 +2555,76 @@ describe('$compile', function () {
         }
       });
       injector.invoke(function ($compile, $rootScope) {
-        var el = $('<div></div>')
+        var el = $('<div my-directive></div>')
+
+        $compile(el);
+        $rootScope.$apply();
+
+        requests[0].respond(200, {}, '<div my-other-directive></div>')
+        otherCompileSpy.called.should.be.true();
       });
     });
+
+    it('supports functions as values', function () {
+      var templateUrlStub = sinon.stub();
+      templateUrlStub.returns('/my_directive.html');
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            templateUrl: templateUrlStub
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive></div>');
+
+        $compile(el);
+        $rootScope.$apply();
+
+        requests[0].url.should.eql('/my_directive.html');
+        templateUrlStub.args[0][0][0].should.be.exactly(el[0]);
+        templateUrlStub.args[0][1].myDirective.should.not.be.undefined();
+      });
+    });
+
+    it('does not allow templateUrl directive after tempalte directive', function () {
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {template: '<div></div>'};
+        },
+        myOtherDirective: function () {
+          return {templateUrl: '/my_other_directive.html'};
+        }
+      });
+      injector.invoke(function ($compile) {
+        var el = $('<div my-directive my-other-directive></div>');
+        (function() {
+          $compile(el);
+        }).should.throw();
+      });
+    });
+
+    it('does not allow template directive after tempalteUrl directive', function () {
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {templateUrl: '/my_directive.html'};
+        },
+        myOtherDirective: function () {
+          return {template: '<div></div>'};
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-other-directive></div>');
+
+        $compile(el);
+        $rootScope.$apply();
+
+        requests[0].respond(200, {}, '<div class="replacement"></div>');
+        el.find('> .replacement').length.should.eql(1);
+
+      });
+    });
+
 
   });
 
