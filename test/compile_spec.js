@@ -2625,6 +2625,84 @@ describe('$compile', function () {
       });
     });
 
+    it('links the directive when public link function is invoked', function () {
+      var linkSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            templateUrl: '/my_directive.html',
+            link: linkSpy
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive></div>');
+
+        var linkFunction = $compile(el);
+
+        $rootScope.$apply();
+        requests[0].respond(200, {}, '<div></div>');
+
+        linkFunction($rootScope);
+        linkSpy.called.should.be.true();
+        linkSpy.args[0][1][0].should.be.exactly(el[0]);
+        linkSpy.args[0][2].should.be.Object();
+      });
+    });
+
+    it('links child elements when public link function is invoked', function () {
+      var linkSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return { templateUrl: '/my_directive.html' };
+        },
+        myOtherDirective: function () {
+          return { link: linkSpy };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<my-directive></div>');
+
+        var linkFunction = $compile(el);
+        $rootScope.$apply();
+
+        requests[0].respond(200, {}, '<div my-other-directive></div>');
+
+        linkFunction($rootScope);
+        linkSpy.called.should.be.true();
+        linkSpy.args[0][1][0].should.be.exactly(el[0].firstChild);
+        linkSpy.args[0][2].should.be.Object();
+      });
+    });
+
+    it('links when template arrives if node link fn was called', function () {
+      var linkSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            templateUrl: '/my_directive.html',
+            link: linkSpy
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+
+        var el = $('<div my-directive></div>');
+        var linkFunction = $compile(el)($rootScope); // link first
+
+        $rootScope.$apply();
+        requests[0].respond(200, {}, '<div></div>'); // then receive template
+
+        linkSpy.called.should.be.true();
+        linkSpy.args[0][0].should.be.exactly($rootScope);
+        linkSpy.args[0][1][0].should.be.exactly(el[0]);
+        linkSpy.args[0][2].should.be.Object();
+      });
+    });
+
+    it('', function () {
+
+    });
 
   });
 
