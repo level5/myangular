@@ -258,10 +258,13 @@ function $CompileProvider($provide) {
       var $compileNode = $(compileNode);
       var terminalPriority = - Number.MAX_VALUE;
       var terminal = false;
-      var preLinkFns = [], postLinkFns = [], controllers = {};
-      var newScopeDirective, newIsolateScopeDirective;
+      var preLinkFns = previousCompileContext.preLinkFns || [];
+      var postLinkFns = previousCompileContext.postLinkFns || [];
+      var controllers = {};
+      var newScopeDirective;
+      var newIsolateScopeDirective = previousCompileContext.newIsolateScopeDirective;
       var templateDirective = previousCompileContext.templateDirective;
-      var controllerDirectives;
+      var controllerDirectives = previousCompileContext.controllerDirectives;
 
       function getControllers(require, $element) {
         if (_.isArray(require)) {
@@ -361,7 +364,13 @@ function $CompileProvider($provide) {
             _.drop(directives, i),
             $compileNode,
             attrs,
-            {templateDirective: templateDirective}
+            {
+              templateDirective: templateDirective,
+              newIsolateScopeDirective: newIsolateScopeDirective,
+              preLinkFns: preLinkFns,
+              postLinkFns: postLinkFns,
+              controllerDirectives: controllerDirectives
+            }
           );
           return false;
         } else if (directive.compile) {
