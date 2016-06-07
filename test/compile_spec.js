@@ -2918,6 +2918,47 @@ describe('$compile', function () {
       });
     });
 
+    it('stop watching when transcluding directive is destoryed', function () {
+      var watchSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {
+            transclude: true,
+            scope: true,
+            link: function (scope, element, attrs, ctrl, transclude) {
+              element.append(transclude());
+              scope.$on('destroyNow', function () {
+                scope.$destroy();
+              });
+            }
+          };
+        },
+        myInnerDirective: function () {
+          return {
+            link: function (scope) {
+              scope.$watch(watchSpy);
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-transcluder><div my-inner-directive></div></div>');
+        $compile(el)($rootScope);
+
+        $rootScope.$apply();
+        watchSpy.callCount.should.eql(2);
+
+        $rootScope.$apply();
+        watchSpy.callCount.should.eql(3);
+
+        $rootScope.$broadcast('destroyNow');
+        $rootScope.$apply();
+
+        watchSpy.callCount.should.eql(3);
+
+      });
+    });
+
   });
 
 });

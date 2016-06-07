@@ -143,7 +143,7 @@ function $CompileProvider($provide) {
           try {
             observer(value);
           } catch(e) {
-            console.log(e);
+            console.error(e);
           }
         })
       }
@@ -243,8 +243,9 @@ function $CompileProvider($provide) {
 
             var boundTranscludeFn;
             if (linkFn.nodeLinkFn.transcludeOnThisElement) {
-              boundTranscludeFn = function () {
-                return linkFn.nodeLinkFn.transclude(scope);
+              boundTranscludeFn = function (containingScope) {
+                var transcludedScope = scope.$new(false, containingScope);
+                return linkFn.nodeLinkFn.transclude(transcludedScope);
               };
             }
 
@@ -473,13 +474,17 @@ function $CompileProvider($provide) {
           controller();
         });
 
+        function scopeBoundTranscludeFn () {
+          return boundTranscludeFn(scope);
+        }
+
         _.forEach(preLinkFns, function (linkFn) {
           linkFn(
             linkFn.isolateScope ? isolateScope : scope,
             $element,
             attrs,
             linkFn.require && getControllers(linkFn.require, $element),
-            boundTranscludeFn
+            scopeBoundTranscludeFn
           );
         });
 
@@ -497,7 +502,7 @@ function $CompileProvider($provide) {
             $element,
             attrs,
             linkFn.require && getControllers(linkFn.require, $element),
-            boundTranscludeFn
+            scopeBoundTranscludeFn
           );
         });
       }

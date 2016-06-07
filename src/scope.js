@@ -3,18 +3,18 @@
 var _ = require('lodash');
 
 function $RootScopeProvider() {
-  
+
   var TTL = 10;
-  
+
   this.digestTtl = function(value) {
     if(_.isNumber(value)) {
       TTL = value;
     }
     return TTL;
   };
-  
+
   this.$get = ['$parse', function ($parse) {
-  
+
     // ====================================================================
     // ============== private scope implementaton
     // ====================================================================
@@ -63,7 +63,7 @@ function $RootScopeProvider() {
       if (this.$parent) {
         var siblings = this.$parent.$$children;
         var indexOfThis = siblings.indexOf(this);
-        if (indexOfThis > 0) {
+        if (indexOfThis >= 0) {
           siblings.splice(indexOfThis, 1);
         }
       }
@@ -73,7 +73,7 @@ function $RootScopeProvider() {
 
     Scope.prototype.$watch = function(watchFn, listenerFn, valueEq) {
       var self = this;
-      
+
       watchFn = $parse(watchFn);
       if (watchFn.$$watchDelegate) {
         return watchFn.$$watchDelegate(self, listenerFn, valueEq, watchFn);
@@ -148,7 +148,7 @@ function $RootScopeProvider() {
         return false;
       }
       var length = obj.length;
-      return length === 0 || 
+      return length === 0 ||
         _.isNumber(length) && length > 0 && (length - 1) in obj;
     }
 
@@ -161,13 +161,13 @@ function $RootScopeProvider() {
       var trackVeryOldValue = (listenerFn.length > 1);
       var changeCount = 0;
       var firstRun = true;
-      
+
       watchFn = $parse(watchFn);
 
       var internalWatchFn = function(scope) {
         var newLength;
         newValue = watchFn(scope);
-        
+
         if (_.isObject(newValue)) {
           if (isArrayLike(newValue)) {
             if (!_.isArray(oldValue)) {
@@ -420,7 +420,7 @@ function $RootScopeProvider() {
           try {
             listeners[i].apply(null, listenerArgs);
           } catch (error) {
-            console.log(error);      
+            console.error(error);
           }
           i++;
         }
@@ -429,8 +429,8 @@ function $RootScopeProvider() {
 
     Scope.prototype.$emit = function(eventName) {
       var propagationStopped = false;
-      var event = { 
-        name: eventName, 
+      var event = {
+        name: eventName,
         targetScope: this,
         stopPropagation: function() {
           propagationStopped = true;
@@ -452,12 +452,12 @@ function $RootScopeProvider() {
     };
 
     Scope.prototype.$broadcast = function(eventName) {
-      var event = { 
-        name: eventName, 
+      var event = {
+        name: eventName,
         targetScope: this,
         preventDefault: function() {
           event.defaultPrevented = true;
-        } 
+        }
       };
       var additionalArgs = _.tail(arguments);
       var listenerArgs = [event].concat(additionalArgs);
@@ -470,12 +470,9 @@ function $RootScopeProvider() {
       return event;
     };
     // ====================================================================
-    
+
     var $rootScope = new Scope();
     return $rootScope;
   }];
 }
 module.exports = $RootScopeProvider;
-
-
-
