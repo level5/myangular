@@ -2959,6 +2959,37 @@ describe('$compile', function () {
       });
     });
 
+    it('allows passing another scope to transclusion function', function () {
+
+      var otherLinkSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {
+            transclude: true,
+            scope: {},
+            template: '<div></div>',
+            link: function (scope, element, attrs, ctrl, transclude) {
+              var mySpecialScope = scope.$new(true);
+              mySpecialScope.specialAttr = 42;
+              transclude(mySpecialScope);
+            }
+          };
+        },
+        myOtherDirective: function () {
+          return {link: otherLinkSpy};
+        }
+      });
+      injector.invoke(function($compile, $rootScope) {
+        var el = $('<div my-transcluder><div my-other-directive></div></div>');
+
+        $compile(el)($rootScope);
+
+        var transcludeScope = otherLinkSpy.args[0][0];
+        transcludeScope.specialAttr.should.eql(42);
+      });
+
+    });
+
   });
 
 });
