@@ -5,6 +5,6 @@ var ngControllerDirective = function () {
     restrict: 'A',
     scope: true,
     controller: '@'
-  }
+  };
 };
 module.exports = ngControllerDirective;

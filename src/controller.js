@@ -18,7 +18,7 @@ function $ControllerProvider() {
 
   this.allowGlobals = function () {
     globals = true;
-  }
+  };
 
   this.register = function (name, controller) {
     if (_.isObject(name)) {

@@ -89,7 +89,7 @@ describe('$q', function () {
     d.resolve(42);
     d.resolve(43);
     
-    $rootScope.$apply()
+    $rootScope.$apply();
     
     promiseSpy.callCount.should.eql(1);
     promiseSpy.calledWith(42).should.be.true();;
@@ -349,7 +349,7 @@ describe('$q', function () {
       return 42;
     }).then(fulfilledSpy);
     
-    d.reject('fail')
+    d.reject('fail');
     $rootScope.$apply();
     
     fulfilledSpy.calledWithExactly(42).should.be.true();
@@ -503,7 +503,7 @@ describe('$q', function () {
       var d2 = $q.defer();
       resolveNested = function () {
         d2.resolve('abc');
-      }
+      };
       return d2.promise;
     }).catch(rejectedSpy);
     
@@ -618,10 +618,10 @@ describe('$q', function () {
       }).catch(_.noop)
       .then(null, null, progressSpy);
       
-      d.notify('working...');
-      $rootScope.$apply();
+    d.notify('working...');
+    $rootScope.$apply();
       
-      progressSpy.calledWithExactly('***working...***');   
+    progressSpy.calledWithExactly('***working...***');   
   });
   
   it('recovers from progressback exceptions.', function () {
@@ -903,7 +903,7 @@ describe('$q', function () {
       
       clock.tick(1);
       watchSpy.called.should.be.false();
-    })
+    });
     
   });
   

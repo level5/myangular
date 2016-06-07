@@ -127,7 +127,7 @@ Lexer.prototype.peek = function(n) {
 
 Lexer.prototype.readNumber = function() {
   var number = '';
-  while(this.index < this.text.length) {
+  while (this.index < this.text.length) {
     var ch = this.text.charAt(this.index).toLowerCase();
     if (ch === '.' || this.isNumber(ch)) {
       number += ch;
@@ -166,13 +166,13 @@ Lexer.prototype.readString = function(quote) {
   var string = '';
   var rawString = quote;
   var escape = false;
-  while(this.index < this.text.length) {
+  while (this.index < this.text.length) {
     var ch = this.text.charAt(this.index);
     rawString += ch;
     if (escape) {
       if (ch === 'u') {
         var hex = this.text.substring(this.index + 1, this.index + 5);
-        if(!hex.match(/[\da-f]{4}/i)) {
+        if (!hex.match(/[\da-f]{4}/i)) {
           throw 'Invalid unicode escape';
         }
         this.index += 4;
@@ -210,9 +210,9 @@ Lexer.prototype.isIdent = function (ch) {
 
 Lexer.prototype.readIdent = function () {
   var text = '';
-  while(this.index < this.text.length) {
+  while (this.index < this.text.length) {
     var ch = this.text.charAt(this.index);
-    if(this.isIdent(ch) || this.isNumber(ch)) {
+    if (this.isIdent(ch) || this.isNumber(ch)) {
       text += ch;
     } else {
       break;
@@ -292,13 +292,13 @@ AST.prototype.filter = function() {
       callee: this.identifier(),
       arguments: args,
       filter: true
-    }
+    };
     while (this.expect(':')) {
       args.push(this.assignment());
     }
   }
   return left;
-}
+};
 
 AST.prototype.assignment = function() {
   var left = this.ternary();
@@ -329,7 +329,7 @@ AST.prototype.ternary = function() {
 AST.prototype.logicalOR = function() {
   var left = this.logicalAND();
   var token;
-  while((token = this.expect('||'))) {
+  while ((token = this.expect('||'))) {
     left = {
       type: AST.LogicalExpression,
       left: left,
@@ -349,7 +349,7 @@ AST.prototype.logicalAND = function () {
       left: left,
       operator: token.text,
       right: this.equality()
-    }
+    };
   }
   return left;
 };
@@ -357,13 +357,13 @@ AST.prototype.logicalAND = function () {
 AST.prototype.equality = function () {
   var left = this.relational();
   var token;
-  while((token = this.expect('==', '!=', '===', '!=='))) {
+  while ((token = this.expect('==', '!=', '===', '!=='))) {
     left = {
       type: AST.BinaryExpression,
       left: left,
       operator: token.text,
       right: this.relational()
-    }
+    };
   }
   return left;
 };
@@ -371,13 +371,13 @@ AST.prototype.equality = function () {
 AST.prototype.relational = function () {
   var left = this.additive();
   var token;
-  while((token = this.expect('<', '>', '<=', '>='))) {
+  while ((token = this.expect('<', '>', '<=', '>='))) {
     left = {
       type: AST.BinaryExpression,
       left: left,
       operator: token.text,
       right: this.additive()
-    }
+    };
   }
   return left;
 };
@@ -385,13 +385,13 @@ AST.prototype.relational = function () {
 AST.prototype.additive = function() {
   var left = this.multiplicative();
   var token;
-  while((token = this.expect('+')) || (token = this.expect('-'))) {
+  while ((token = this.expect('+')) || (token = this.expect('-'))) {
     left = {
       type: AST.BinaryExpression,
       left: left,
       operator: token.text,
       right: this.multiplicative()
-    }
+    };
   }
   return left;
 };
@@ -450,7 +450,7 @@ AST.prototype.primary = function () {
       };
       this.consume(']');
     } else if (next.text === '.') {
-    primary = {
+      primary = {
       type: AST.MemberExpression,
       object: primary,
       property: this.identifier(),
@@ -494,7 +494,7 @@ AST.prototype.expect = function (e1, e2, e3, e4) {
 };
 
 AST.prototype.peek = function (e1, e2, e3, e4) {
- if (this.tokens.length > 0) {
+  if (this.tokens.length > 0) {
    var text = this.tokens[0].text;
    if (text === e1 || text === e2 || text === e3 || text === e4 ||
         (!e1 && !e2 && !e3 && !e4)) {
@@ -632,7 +632,7 @@ function assignableAST(ast) {
       right: {
         type: AST.NGValueParameter
       }
-    }
+    };
   }
 }
 
@@ -656,7 +656,7 @@ ASTCompiler.prototype.watchFns = function() {
   }
   
   return result.join('');
-}
+};
 
 /**
  * get the inputs of the top-level AST node.
@@ -705,7 +705,7 @@ function markConstantAndWatchExpressions(ast, $filter) {
       _.forEach(ast.elements, function(element) {
         markConstantAndWatchExpressions(element, $filter);
         allConstant = allConstant && element.constant;
-        if(!element.constant) {
+        if (!element.constant) {
           // 为了把数组每个参数push上去。
           argsToWatch.push.apply(argsToWatch, element.toWatch);
         }
@@ -719,7 +719,7 @@ function markConstantAndWatchExpressions(ast, $filter) {
       _.forEach(ast.properties, function(property) {
         markConstantAndWatchExpressions(property.value, $filter);
         allConstant = allConstant && property.value.constant;
-        if(!property.value.constant) {
+        if (!property.value.constant) {
           argsToWatch.push.apply(argsToWatch, property.value.toWatch);
         }
       });
@@ -806,7 +806,7 @@ ASTCompiler.prototype.recurse = function(ast, context, create) {
       }.bind(this));
       return '[' + elements.join(',') + ']';
     case AST.ObjectExpression:
-    var properties = _.map(ast.properties, function(property) {
+      var properties = _.map(ast.properties, function(property) {
       var key = property.key.type === AST.Identifier ?
               property.key.name :
               this.escape(property.key.value);
@@ -1138,7 +1138,7 @@ function constantWatchDelegate(scope, listenerFn, valueEq, watchFn) {
       return watchFn(scope);
     },
     function(newValue, oldValue, scope) {
-      if(_.isFunction(listenerFn)) {
+      if (_.isFunction(listenerFn)) {
         listenerFn.apply(this, arguments);
       }
       unwatch();
@@ -1157,10 +1157,10 @@ function oneTimeWatchDelegate(scope, listenerFn, valueEq, watchFn) {
     },
     function(newValue, oldValue, scope) {
       lastValue = newValue;
-      if(_.isFunction(listenerFn)) {
+      if (_.isFunction(listenerFn)) {
         listenerFn.apply(this, arguments);
       }
-      if(!_.isUndefined(newValue)) {
+      if (!_.isUndefined(newValue)) {
         scope.$$postDigest(function() {
           if (!_.isUndefined(lastValue)) {
             unwatch();
@@ -1182,7 +1182,7 @@ function oneTimeLiteralWatchDelegate(scope, listenerFn, valueEq, watchFn) {
       return watchFn(scope);
     },
     function (newValue, oldValue, scope) {
-      if(_.isFunction(listenerFn)) {
+      if (_.isFunction(listenerFn)) {
         listenerFn.apply(this, arguments);
       }
       if (isAllDefined(newValue)) {

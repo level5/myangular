@@ -1,7 +1,7 @@
 'use strict';
 
-var sinon = require('sinon');
-var _ = require('lodash');
+// var sinon = require('sinon');
+// var _ = require('lodash');
 
 var publishExternalAPI = require('../src/angular_public');
 var createInjector = require('../src/injector');

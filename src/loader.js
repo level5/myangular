@@ -3,7 +3,7 @@
 function setupModuleLoader(window) {
   var ensure = function (obj, name, factory) {
     return obj[name] = obj[name] || (obj[name] = factory());
-  }
+  };
   var angular = ensure(window, 'angular', Object);
 
   var createModule = function (name, requires, modules, configFn) {
@@ -18,7 +18,7 @@ function setupModuleLoader(window) {
         queue = queue || invokeQueue;
         queue[arrayMethod || 'push']([service, method, arguments]);
         return moduleInstance;
-      }
+      };
     };
     var moduleInstance = {
       name: name,
@@ -42,13 +42,13 @@ function setupModuleLoader(window) {
       _runBlocks: []
     };
 
-    if(configFn) {
+    if (configFn) {
       moduleInstance.config(configFn);
     }
 
     modules[name] = moduleInstance;
     return moduleInstance;
-  }
+  };
 
   var getModule = function (name, modules) {
     if (modules.hasOwnProperty(name)) {
@@ -56,7 +56,7 @@ function setupModuleLoader(window) {
     } else {
       throw 'Module ' + name + ' is not avaliable!';
     }
-  }
+  };
 
   ensure(angular, 'module', function () {
     var modules = {};
@@ -67,7 +67,7 @@ function setupModuleLoader(window) {
         return getModule(name, modules);
       }
     };
-  })
+  });
 }
 
 

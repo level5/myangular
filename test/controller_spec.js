@@ -1,7 +1,7 @@
 'use strict';
 
-var sinon = require('sinon');
-var _ = require('lodash');
+// var sinon = require('sinon');
+// var _ = require('lodash');
 
 var publishExternalAPI = require('../src/angular_public');
 var createInjector = require('../src/injector');
@@ -166,7 +166,7 @@ describe('$controller', function () {
     var $controller = injector.get('$controller');
 
     function MyController() { }
-    
+
     var scope = {};
     var controller = $controller(MyController, {$scope: scope}, true, 'myCtrl');
     scope.myCtrl.should.eql(controller.instance);

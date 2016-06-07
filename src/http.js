@@ -34,7 +34,7 @@ function buildUrl(url, serializeParams) {
 }
 
 function defaultHttpResponseTransform(data, headers) {
-  if(_.isString(data)) {
+  if (_.isString(data)) {
     var contentType = headers('Content-Type');
     if (contentType && contentType.indexOf('application/json') === 0 ||
           isJsonLike(data)) {
@@ -199,11 +199,11 @@ function $HttpProvider() {
             });
           }
 
-          if(useApplyAsync) {
+          if (useApplyAsync) {
             $rootScope.$applyAsync(resolvePromise);
           } else {
             resolvePromise();
-            if(!$rootScope.$$phase) {
+            if (!$rootScope.$$phase) {
               $rootScope.$apply();
             }
           }
@@ -225,7 +225,7 @@ function $HttpProvider() {
       }
 
       function serverRequest(config) {
-        if(_.isUndefined(config.withCredentials) &&
+        if (_.isUndefined(config.withCredentials) &&
             !_.isUndefined(defaults.withCredentials)) {
           config.withCredentials = defaults.withCredentials;
         }
@@ -270,7 +270,7 @@ function $HttpProvider() {
           transformResponse: defaults.transformResponse,
           paramSerializer: defaults.paramSerializer
         }, requestConfig);
-        if(_.isString(config.paramSerializer)) {
+        if (_.isString(config.paramSerializer)) {
           config.paramSerializer = $injector.get(config.paramSerializer);
         }
         config.headers = mergeHeaders(requestConfig);
@@ -308,7 +308,7 @@ function $HttpProvider() {
             method: method.toUpperCase(),
             url: url
           }));
-        }
+        };
       });
       _.forEach(['post', 'put', 'patch'], function (method) {
         $http[method] = function (url, data, config) {
@@ -317,10 +317,10 @@ function $HttpProvider() {
             url: url,
             data: data
           }));
-        }
+        };
       });
       return $http;
-  }];
+    }];
 }
 
 function $httpParamSerializerProvider() {
@@ -331,7 +331,7 @@ function $httpParamSerializerProvider() {
         if (_.isNull(value) || _.isUndefined(value)) {
           return;
         }
-        if(!_.isArray(value)) {
+        if (!_.isArray(value)) {
           value = [value];
         }
         _.forEach(value, function(v) {
@@ -355,7 +355,7 @@ function $httpParamSerializerJQLikeProvider() {
         if (_.isNull(value) || _.isUndefined(value)) {
           return;
         }
-        if(_.isArray(value)) {
+        if (_.isArray(value)) {
           _.forEach(value, function (v, i) {
             serialize(v, prefix + '[' + (_.isObject(v) ? i : '') + ']');
           });

@@ -112,7 +112,7 @@ describe('filter filter', function () {
     }).should.eql([
       {name: 'Mary', admin: true},
       {name: 'John', admin: true}
-    ])
+    ]);
   });
 
   it('filters with a substring numeric value', function() {

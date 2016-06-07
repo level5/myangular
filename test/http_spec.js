@@ -24,7 +24,7 @@ describe('$http', function () {
     requests = [];
     xhr.onCreate = function (req) {
       requests.push(req);
-    }
+    };
   });
 
   afterEach(function () {
@@ -703,9 +703,9 @@ describe('$http', function () {
         b: 43
       },
       paramSerializer: function (params) {
-          return _.map(params, function (v, k) {
-            return k + '=' + v + 'lol';
-          }).join('&');
+        return _.map(params, function (v, k) {
+          return k + '=' + v + 'lol';
+        }).join('&');
       }
     });
 
@@ -721,7 +721,7 @@ describe('$http', function () {
           return _.map(params, function (v, k) {
             return k + '=' + v + 'lol';
           }).join('&');
-        }
+        };
       });
     }]);
     injector.invoke(function($http, $rootScope) {
@@ -743,7 +743,7 @@ describe('$http', function () {
     injector.invoke(function ($httpParamSerializer) {
       var result = $httpParamSerializer({a: 42, b: 43});
       result.should.eql('a=42&b=43');
-    })
+    });
   });
 
   describe('JQ-like param serialization', function () {

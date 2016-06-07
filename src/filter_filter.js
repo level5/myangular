@@ -26,10 +26,10 @@ function createPredicateFn(expression, comparator) {
   var shouldMatchPrimitives =
     _.isObject(expression) && ('$' in expression);
 
-   if (comparator === true) {
+  if (comparator === true) {
      comparator = _.isEqual;
-   } else if(!_.isFunction(comparator)) {
-    comparator =  function (actual, expected) {
+   } else if (!_.isFunction(comparator)) {
+     comparator =  function (actual, expected) {
       if (_.isUndefined(actual)) {
         return false;
       }
@@ -39,7 +39,7 @@ function createPredicateFn(expression, comparator) {
       actual = ("" + actual).toLowerCase();
       expected = ("" + expected).toLowerCase();
       return actual.indexOf(expected) !== -1;
-    }
+    };
    }
 
 
@@ -66,7 +66,7 @@ function createPredicateFn(expression, comparator) {
           return deepCompare(actualVal, expectedVal, comparator,
                               isWildcard, isWildcard);
         });
-      } else if (matchAnyProperty){
+      } else if (matchAnyProperty) {
         return _.some(actual, function(value) {
           return deepCompare(value, expected, comparator, matchAnyProperty);
         });
@@ -79,7 +79,7 @@ function createPredicateFn(expression, comparator) {
   }
 
   return function (item) {
-    if(shouldMatchPrimitives && !_.isObject(item)) {
+    if (shouldMatchPrimitives && !_.isObject(item)) {
       return deepCompare(item, expression.$, comparator);
     }
     return deepCompare(item, expression, comparator, true);

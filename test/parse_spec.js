@@ -56,8 +56,8 @@ describe('parse', function() {
   });
 
   it('will not parse invalid scientific notation.', function() {
-    (function(){ parse('42e-'); }).should.throw();
-    (function(){ parse('42e+'); }).should.throw();
+    (function() { parse('42e-'); }).should.throw();
+    (function() { parse('42e+'); }).should.throw();
   });
 
   it('can parse a string in single quotes.', function() {
@@ -385,7 +385,7 @@ describe('parse', function() {
 
   it('does not allow accessing window as computed property.', function () {
     (function() {
-    var fn = parse('anObject["wnd"]');
+      var fn = parse('anObject["wnd"]');
       fn({anObject: {wnd: window}});
     }).should.throw();
   });
@@ -453,14 +453,14 @@ describe('parse', function() {
     }).should.throw();
   });
 
-  if('does not allow calling call.', function() {
+  if ('does not allow calling call.', function() {
     (function() {
       var fn = parse('fun.call(obj)');
       fn({fun: function() {}, obj: {}});
     }).should.throw();
   });
 
-  if('does not allow calling apply.', function() {
+  if ('does not allow calling apply.', function() {
     (function() {
       var fn = parse('fun.apply(obj)');
       fn({fun: function() {}, obj: {}});
@@ -706,7 +706,7 @@ describe('parse', function() {
         return function(s, left, right) {
           return left + s + right;
         };
-     });
+      });
     }]).get('$parse');
 
     var fn = parse('"hello" | surround:"*":"!"');

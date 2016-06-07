@@ -49,7 +49,7 @@ function qFactory(callLater) {
     }, function (rejection) {
       return handleFinallyCallback(callback, rejection, false);
     }, progressBack);
-  }
+  };
   
   function Deferred() {
     this.promise = new Promise();
@@ -112,7 +112,7 @@ function qFactory(callLater) {
       var deferred = handlers[0];
       var fn = handlers[state.status];
       try {
-        if(_.isFunction(fn)) {
+        if (_.isFunction(fn)) {
           deferred.resolve(fn(state.value));
         } else if (state.status == 1) {
           deferred.resolve(state.value);
@@ -150,14 +150,14 @@ function qFactory(callLater) {
       when(promise).then(function (value) {
         results[index] = value;
         counter--;
-        if(!counter) {
+        if (!counter) {
           d.resolve(results);
         }
       }, function (rejection) {
         d.reject(rejection);
       });
     });
-    if(!counter) {
+    if (!counter) {
       d.resolve(results);
     }
     return d.promise;
@@ -167,7 +167,7 @@ function qFactory(callLater) {
   // ====================================================================
   
   var $Q = function Q(resolver) {
-    if(!_.isFunction(resolver)) {
+    if (!_.isFunction(resolver)) {
       throw 'Expected function, got' + resolver;
     }
     var d = defer();
@@ -208,7 +208,7 @@ function $$QProvider() {
     return qFactory(function(callback) {
       setTimeout(callback, 0);
     });
-  }
+  };
 }
 
 module.exports = {

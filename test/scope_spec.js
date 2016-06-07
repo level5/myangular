@@ -17,7 +17,7 @@ describe('Scope', function() {
       scope = createInjector(['ng']).get('$rootScope');
     });
 
-    it('calls the listener function of a watch on first $disgest', function(){
+    it('calls the listener function of a watch on first $disgest', function() {
       var watchFn = function() {return 'wat';};
       var listenerFn = sinon.spy();
 
@@ -379,7 +379,7 @@ describe('Scope', function() {
       scope.$evalAsync(function(scope) {});
 
       scope.counter.should.eql(0);
-      setTimeout(function(){
+      setTimeout(function() {
         scope.counter.should.eql(1);
         done();
       }, 50);
@@ -531,7 +531,7 @@ describe('Scope', function() {
       );
 
       scope.$watch(
-        function(scope){return scope.aValue;},
+        function(scope) {return scope.aValue;},
         function(newValue, oldValue, scope) {
           scope.counter++;
         }
@@ -791,7 +791,7 @@ describe('Scope', function() {
       scope.$watch('::aValue', function() {});
       
       scope.$digest();
-      scope.$$watchers.length.should.eql(1)
+      scope.$$watchers.length.should.eql(1);
       
       scope.aValue = 42;
       scope.$digest();
@@ -817,7 +817,7 @@ describe('Scope', function() {
     });
     
     it('does not remove one-time watches before all array items defined.', function() {
-      scope.$watch('::[1, 2, aValue]', function(){}, true);
+      scope.$watch('::[1, 2, aValue]', function() {}, true);
       scope.$digest();
       scope.$$watchers.length.should.eql(1);
       
@@ -1179,8 +1179,8 @@ describe('Scope', function() {
         }
       );
 
-        parent.$digest();
-        child.aValueWas.should.eql('abc');
+      parent.$digest();
+      child.aValueWas.should.eql('abc');
 
     });
 

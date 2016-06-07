@@ -37,7 +37,7 @@ HashMap.prototype = {
     delete this[key];
     return value;
   }
-}
+};
 
 module.exports = {
   hashKey: hashKey,

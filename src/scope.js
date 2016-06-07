@@ -7,7 +7,7 @@ function $RootScopeProvider() {
   var TTL = 10;
 
   this.digestTtl = function(value) {
-    if(_.isNumber(value)) {
+    if (_.isNumber(value)) {
       TTL = value;
     }
     return TTL;
@@ -107,7 +107,7 @@ function $RootScopeProvider() {
       if (watchFns.length === 0) {
         var shouldCall = true;
         self.$evalAsync(function() {
-          if(shouldCall) {
+          if (shouldCall) {
             listenerFn(newValues, newValues, self);
           }
         });
@@ -237,7 +237,7 @@ function $RootScopeProvider() {
     };
 
     Scope.prototype.$$areEqual = function(newValue, oldValue, valueEq) {
-      if(valueEq) {
+      if (valueEq) {
         return _.isEqual(newValue, oldValue);
       } else {
         return newValue === oldValue || (typeof newValue === 'number' &&
@@ -264,7 +264,7 @@ function $RootScopeProvider() {
         var newValue, oldValue;
         _.forEachRight(scope.$$watchers, function(watcher) {
           try {
-            if(watcher) {
+            if (watcher) {
               newValue = watcher.watchFn(scope);
               oldValue = watcher.last;
               if (!scope.$$areEqual(newValue, oldValue, watcher.valueEq)) {
@@ -274,17 +274,17 @@ function $RootScopeProvider() {
                 watcher.listenerFn(newValue,
                   oldValue === initWatchVal ? newValue : oldValue,
                   scope);
-                  dirty = true;
-                } else if (scope.$root.$$lastDirtyWatch === watcher) {
+                dirty = true;
+              } else if (scope.$root.$$lastDirtyWatch === watcher) {
                   continueLoop = false;
                   return false; // 返回false表示中断forEach
                 }
-              }
-            } catch(e) {
+            }
+          } catch (e) {
               console.error(e);
             }
-          });
-          return continueLoop;
+        });
+        return continueLoop;
       });
       return dirty;
     };
@@ -306,7 +306,7 @@ function $RootScopeProvider() {
           try {
             var asyncTask = this.$$asyncQueue.shift();
             asyncTask.scope.$eval(asyncTask.expression);
-          } catch(e) {
+          } catch (e) {
             console.error(e);
           }
         }
@@ -314,12 +314,12 @@ function $RootScopeProvider() {
         if ((dirty || this.$$asyncQueue.length) && !(ttl--)) {
           throw TTL + " digest iterations reached";
         }
-      } while(dirty || this.$$asyncQueue.length);
+      } while (dirty || this.$$asyncQueue.length);
       this.$clearPhase();
-      while(this.$$postDigestQueue.length) {
+      while (this.$$postDigestQueue.length) {
         try {
           this.$$postDigestQueue.shift()();
-        } catch(e) {
+        } catch (e) {
           console.error(e);
         }
       }
@@ -334,10 +334,10 @@ function $RootScopeProvider() {
     };
 
     Scope.prototype.$$flushApplyAsync = function() {
-      while(this.$$applyAsyncQueue.length) {
+      while (this.$$applyAsyncQueue.length) {
         try {
           this.$$applyAsyncQueue.shift()();
-        } catch(e) {
+        } catch (e) {
           console.error(e);
         }
       }
@@ -413,7 +413,7 @@ function $RootScopeProvider() {
     Scope.prototype.$$fireEventOnScope = function (eventName, listenerArgs) {
       var listeners = this.$$listeners[eventName] || [];
       var i = 0;
-      while(i < listeners.length) {
+      while (i < listeners.length) {
         if (listeners[i] === null) {
           listeners.splice(i, 1);
         } else {
@@ -446,7 +446,7 @@ function $RootScopeProvider() {
         event.currentScope = scope;
         scope.$$fireEventOnScope(eventName, listenerArgs);
         scope = scope.$parent;
-      } while(scope && !propagationStopped);
+      } while (scope && !propagationStopped);
       event.currentScope = null;
       return event;
     };

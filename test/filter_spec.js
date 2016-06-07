@@ -51,7 +51,7 @@ describe('filter', function() {
       $filterProvider.register('my', function (suffix) {
         return function (v) {
           return suffix + v;
-        }
+        };
       });
     }]);
     

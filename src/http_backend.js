@@ -18,7 +18,7 @@ function $HttpBackendProvider() {
       xhr.send(post || null);
 
       xhr.onload = function () {
-        if( !_.isUndefined(timeoutId)) {
+        if ( !_.isUndefined(timeoutId)) {
           clearTimeout(timeoutId);
         }
         var response = ('response' in xhr) ? xhr.response : xhr.responseText;
@@ -30,13 +30,13 @@ function $HttpBackendProvider() {
           statusText);
       };
       xhr.onerror = function (params) {
-        if( !_.isUndefined(timeoutId)) {
+        if ( !_.isUndefined(timeoutId)) {
           clearTimeout(timeoutId);
         }
         callback(-1, null, '');
-      }
+      };
 
-      if(timeout && timeout.then) {
+      if (timeout && timeout.then) {
         timeout.then(function () {
           xhr.abort();
         });
@@ -45,7 +45,7 @@ function $HttpBackendProvider() {
           xhr.abort();
         }, timeout);
       }
-    }
+    };
   };
 }
 

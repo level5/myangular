@@ -163,10 +163,10 @@ describe('$compile', function () {
             compile: function(element) {
               element.data('hasCompiled', true);
             }
-          }
+          };
         });
         injector.invoke(function ($compile) {
-          var el = $('<' + prefix + delim + 'my-dir></' + prefix + delim + 'my-dir>')
+          var el = $('<' + prefix + delim + 'my-dir></' + prefix + delim + 'my-dir>');
           $compile(el);
           el.data('hasCompiled').should.be.true();
         });
@@ -267,7 +267,7 @@ describe('$compile', function () {
         compile: function (element) {
           element.data('hasCompiled',true);
         }
-      }
+      };
     });
     injector.invoke(function ($compile) {
       var el = $('<div ng-attr-my-directive></div>');
@@ -283,7 +283,7 @@ describe('$compile', function () {
         compile: function (element) {
           element.data('hasCompiled',true);
         }
-      }
+      };
     });
     injector.invoke(function ($compile) {
       var el = $('<div data:ng-attr-my-directive></div>');
@@ -299,10 +299,10 @@ describe('$compile', function () {
         compile: function (element) {
           element.data('hasCompiled',true);
         }
-      }
+      };
     });
     injector.invoke(function ($compile) {
-      var el = $('<div class="my-directive"></div>')
+      var el = $('<div class="my-directive"></div>');
       $compile(el);
       el.data('hasCompiled').should.be.true();
     });
@@ -332,7 +332,7 @@ describe('$compile', function () {
       $compile(el);
       el.data('hasCompiled').should.be.true();
       el.data('secondCompiled').should.be.true();
-    })
+    });
   });
 
   it('compiles class directives with prefixes', function () {
@@ -342,13 +342,13 @@ describe('$compile', function () {
         compile: function (element) {
           element.data('hasCompiled',true);
         }
-      }
+      };
     });
     injector.invoke(function ($compile) {
-      var el = $('<div class="x-my-directive"></div>')
+      var el = $('<div class="x-my-directive"></div>');
       $compile(el);
       el.data('hasCompiled').should.be.true();
-    })
+    });
   });
 
   it('compiles comment directives', function () {
@@ -359,10 +359,10 @@ describe('$compile', function () {
         compile: function (element) {
           hasCompiled = true;
         }
-      }
+      };
     });
     injector.invoke(function ($compile) {
-      var el = $('<!-- directive: my-directive -->')
+      var el = $('<!-- directive: my-directive -->');
       $compile(el);
       hasCompiled.should.be.true();
     });
@@ -393,15 +393,15 @@ describe('$compile', function () {
               compile: function (element) {
                 hasCompiled = true;
               }
-            }
+            };
           });
           injector.invoke(function ($compile) {
             var el = $(dom);
             $compile(el);
             should(hasCompiled).be.exactly(expected[type]);
-          })
+          });
         });
-      })
+      });
     });
   });
 
@@ -479,7 +479,7 @@ describe('$compile', function () {
           compile: function (element) {
             compilations.push('lower');
           }
-        }
+        };
       },
       higherDirective: function () {
         return {
@@ -549,7 +549,7 @@ describe('$compile', function () {
       var el = $('<div a-directive></div>');
       $compile(el);
       compilations.should.eql(['first', 'second']);
-    })
+    });
   });
 
   it('uses default priority when one not given', function () {
@@ -698,7 +698,7 @@ describe('$compile', function () {
         'myDirective',
         '<my-directive my-attr="  val  "></my-directive>',
         function (element, attrs) {
-          attrs.myAttr.should.eql('val')
+          attrs.myAttr.should.eql('val');
         }
       );
     });
@@ -781,14 +781,14 @@ describe('$compile', function () {
             compile: function (element, attrs) {
               attrs2 = attrs;
             }
-          }
+          };
         }
       });
       injector.invoke(function ($compile) {
         var el = $('<div my-dir my-other-dir></div>');
         $compile(el);
         attrs1.should.be.exactly(attrs2);
-      })
+      });
     });
 
     it('sets prop for boolean attributes', function () {
@@ -979,7 +979,7 @@ describe('$compile', function () {
           attrs.$addClass('some-class');
           element.hasClass('some-class').should.be.true();
         }
-      )
+      );
     });
 
     it('allows removing classes', function () {
@@ -990,7 +990,7 @@ describe('$compile', function () {
           attrs.$removeClass('some-class');
           element.hasClass('some-class').should.be.false();
         }
-      )
+      );
     });
 
     it('allows updating classes', function () {
@@ -1068,7 +1068,7 @@ describe('$compile', function () {
             givenElement = element;
             givenAttrs = attrs;
           }
-        }
+        };
       });
       injector.invoke(function ($compile, $rootScope) {
         var el = $('<div my-directive></div>');
@@ -1095,7 +1095,7 @@ describe('$compile', function () {
         givenElements.length.should.eql(2);
         givenElements[0][0].should.be.exactly(el[0].firstChild);
         givenElements[1][0].should.be.exactly(el[0]);
-      })
+      });
     });
 
     it('links children when parent has no directives', function () {
@@ -1145,7 +1145,7 @@ describe('$compile', function () {
               linkings.push(['post', element[0]]);
             }
           }
-        }
+        };
       });
       injector.invoke(function ($compile, $rootScope) {
         var el = $('<div my-directive><div my-directive></div></div>');
@@ -1228,7 +1228,7 @@ describe('$compile', function () {
           link: function (scope, element, attrs) {
             givenElements = element;
           }
-        }
+        };
       });
       injector.invoke(function ($compile, $rootScope) {
         var el = $(
@@ -1289,7 +1289,7 @@ describe('$compile', function () {
           link: function (scope) {
             givenScope = scope;
           }
-        }
+        };
       });
       injector.invoke(function ($compile, $rootScope) {
         var el = $('<div my-directive></div>');
@@ -1330,11 +1330,11 @@ describe('$compile', function () {
             link: function (scope) {
               givenScope = scope;
             }
-          }
+          };
         }
       });
       injector.invoke(function ($compile, $rootScope) {
-        var el = $('<div my-directive my-other-directive></div>')
+        var el = $('<div my-directive my-other-directive></div>');
         $compile(el)($rootScope);
         givenScope.should.be.exactly($rootScope);
       });
@@ -1374,7 +1374,7 @@ describe('$compile', function () {
         myOtherDirective: function () {
           return {
             scope: {}
-          }
+          };
         }
       });
       injector.invoke(function ($compile, $rootScope) {
@@ -1403,7 +1403,7 @@ describe('$compile', function () {
         (function () {
           $compile(el);
         }).should.throw();
-      })
+      });
     });
 
     it('adds clas and data for element with isolated scope', function () {
@@ -1477,7 +1477,7 @@ describe('$compile', function () {
           link: function (scope, element, attrs) {
             givenScope = scope;
           }
-        }
+        };
       });
       injector.invoke(function ($compile, $rootScope) {
         var el = $('<div my-directive an-attr="42"></div>');
@@ -1601,7 +1601,7 @@ describe('$compile', function () {
           link: function (scope) {
             givenScope = scope;
           }
-        }
+        };
       });
       injector.invoke(function ($compile, $rootScope) {
         $rootScope.parentFunction = function () {
@@ -1626,7 +1626,7 @@ describe('$compile', function () {
           link: function (scope) {
             givenScope = scope;
           }
-        }
+        };
       });
       injector.invoke(function ($compile, $rootScope) {
         $rootScope.parentFunction = function () {
@@ -1678,7 +1678,7 @@ describe('$compile', function () {
         var el = $('<div my-directive my-expr="parentFunction() + 1"></div>');
         $compile(el)($rootScope);
         givenScope.myExpr().should.eql(43);
-      })
+      });
     });
 
     it('allows passing arguments to parent scope expression', function () {
@@ -1744,10 +1744,10 @@ describe('$compile', function () {
         };
       });
       injector.invoke(function ($compile, $rootScope) {
-        var el = $('<div my-directive></div>')
+        var el = $('<div my-directive></div>');
         $compile(el)($rootScope);
         controllerInvoked.should.be.true();
-      })
+      });
     });
 
     it('can be attached to directives as string reference', function () {
@@ -1767,7 +1767,7 @@ describe('$compile', function () {
         var el = $('<div my-directive></div>');
         $compile(el)($rootScope);
         controllerInvoked.should.be.true();
-      })
+      });
     });
 
     it('can be applied in the same element independent of each other', function () {
@@ -2059,7 +2059,7 @@ describe('$compile', function () {
         var el = $('<div my-directive my-other-directive my-third-directive></div>');
         $compile(el)($rootScope);
         gotControllers.should.be.Array();
-        gotControllers.length.should.eql(2)
+        gotControllers.length.should.eql(2);
         gotControllers[0].should.be.instanceOf(MyController);
         gotControllers[1].should.be.instanceOf(MyOtherController);
       });
@@ -2134,7 +2134,7 @@ describe('$compile', function () {
         $compile(el)($rootScope);
         gotMyController.should.be.Object();
         gotMyController.should.be.instanceOf(MyController);
-      })
+      });
     });
 
     it('finds from sibling directive when requiring with parent prefix', function () {
@@ -2247,7 +2247,7 @@ describe('$compile', function () {
             link: function functionName(scope, element, attrs, ctrl) {
               gotCtrl = ctrl;
             }
-          }
+          };
         });
       }]);
       injector.invoke(function ($compile, $rootScope) {
@@ -2413,7 +2413,7 @@ describe('$compile', function () {
 
     afterEach(function () {
       xhr.restore();
-    })
+    });
 
     it('defers remaining directive compilation', function () {
       var otherCompileSpy = sinon.spy();
@@ -2446,7 +2446,7 @@ describe('$compile', function () {
         var el = $('<div my-directive></div>');
         $compile(el);
         compileSpy.called.should.be.false();
-      })
+      });
     });
 
     it('immediately empites out the element', function () {
@@ -2486,7 +2486,7 @@ describe('$compile', function () {
     it('populates element with template', function () {
       var injector = makeInjectorWithDirective({
         myDirective: function () {
-          return {templateUrl: '/my_directive.html'}
+          return {templateUrl: '/my_directive.html'};
         }
       });
       injector.invoke(function ($compile, $rootScope) {
@@ -2540,7 +2540,7 @@ describe('$compile', function () {
         $rootScope.$apply();
         requests[0].respond(200, {}, '<div class="from-template"></div>');
         otherCompileSpy.called.should.be.true();
-      })
+      });
 
     });
 
@@ -2548,19 +2548,19 @@ describe('$compile', function () {
       var otherCompileSpy = sinon.spy();
       var injector = makeInjectorWithDirective({
         myDirective: function () {
-          return {templateUrl: '/my_directive.html'}
+          return {templateUrl: '/my_directive.html'};
         },
         myOtherDirective: function () {
           return {compile: otherCompileSpy};
         }
       });
       injector.invoke(function ($compile, $rootScope) {
-        var el = $('<div my-directive></div>')
+        var el = $('<div my-directive></div>');
 
         $compile(el);
         $rootScope.$apply();
 
-        requests[0].respond(200, {}, '<div my-other-directive></div>')
+        requests[0].respond(200, {}, '<div my-other-directive></div>');
         otherCompileSpy.called.should.be.true();
       });
     });
@@ -2740,7 +2740,7 @@ describe('$compile', function () {
         }
       });
       injector.invoke(function ($compile, $rootScope) {
-        var el = $('<div my-directive="42" my-other-directive></div>')
+        var el = $('<div my-directive="42" my-other-directive></div>');
 
         var linkFunction = $compile(el);
         $rootScope.$apply();
@@ -2988,6 +2988,154 @@ describe('$compile', function () {
         transcludeScope.specialAttr.should.eql(42);
       });
 
+    });
+
+    it('makes contents available to child elements', function () {
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {
+            transclude: true,
+            template: '<div in-template></div>'
+          };
+        },
+        inTemplate: function () {
+          return {
+            link: function (scope, element, attrs, ctrl, transcludeFn) {
+              element.append(transcludeFn());
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-transcluder><div in-transclude></div></div>');
+
+        $compile(el)($rootScope);
+
+        el.find('> [in-template] > [in-transclude]').length.should.eql(1);
+      });
+    });
+
+    it('makes contents available to indirect child elements', function () {
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {
+            transclude: true,
+            template: '<div><div in-template></div></div>'
+          };
+        },
+        inTemplate: function () {
+          return {
+            link: function (scope, element, attrs, ctrl, transcludeFn) {
+              element.append(transcludeFn());
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-transcluder><div in-transclude></div></div>');
+
+        $compile(el)($rootScope);
+
+        el.find('> div > [in-template] > [in-transclude]').length.should.eql(1);
+      });
+    });
+
+    it('supports passing transclusion function to public link function', function () {
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function ($compile) {
+          return {
+            transclude: true,
+            link: function (scope, element, attrs, ctrl, transclude) {
+              var customTemplate = $('<div in-custom-template></div>');
+              element.append(customTemplate);
+              $compile(customTemplate)(scope, {
+                parentBoundTranscludeFn: transclude
+              });
+            }
+          };
+        },
+        inCustomTemplate: function () {
+          return {
+            link: function (scope, element, attrs, ctrl, transclude) {
+              element.append(transclude());
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-transcluder><div in-transclude></div></div>');
+        $compile(el)($rootScope);
+        el.find('> [in-custom-template] > [in-transclude]').length.should.eql(1);
+      });
+    });
+
+    it('destroys scope passed through public link fn at the right time', function () {
+      var watchSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function ($compile) {
+          return {
+            transclude: true,
+            link:function (scope, element, attrs, ctrl, transclude) {
+              var customTemplate = $('<div in-custom-template></div>');
+              element.append(customTemplate);
+              $compile(customTemplate)(scope, {
+                parentBoundTranscludeFn: transclude
+              });
+            }
+          };
+        },
+        inCustomTemplate: function () {
+          return {
+            scope: true,
+            link: function (scope, element, attrs, ctrl, transclude) {
+              element.append(transclude());
+              scope.$on('destroyNow', function () {
+                scope.$destroy();
+              });
+            }
+          };
+        },
+        inTransclude: function () {
+          return {
+            link:function (scope) {
+              scope.$watch(watchSpy);
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-transcluder><div in-transclude></div></div>');
+        $compile(el)($rootScope);
+
+        $rootScope.$apply();
+        watchSpy.callCount.should.eql(2);
+
+        $rootScope.$apply();
+        watchSpy.callCount.should.eql(3);
+
+        $rootScope.$broadcast('destroyNow');
+        $rootScope.$apply();
+        watchSpy.callCount.should.eql(3);
+      });
+    });
+
+    it('makes contents available to controller', function () {
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {
+            transclude: true,
+            template: '<div in-template></div>',
+            controller: function ($element, $transclude) {
+              $element.find('[in-template]').append($transclude());
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-transcluder><div in-transclude></div></div>');
+        $compile(el)($rootScope);
+        el.find('> [in-template] > [in-transclude]').length.should.eql(1);
+      });
     });
 
   });

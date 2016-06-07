@@ -16,19 +16,19 @@ describe('injector', function() {
     var injector = createInjector([]);
     injector.should.be.Object();
   });
-  
+
   it('has a constant that has been registered to a module', function() {
-     var module = window.angular.module('myModule', []);
-     module.constant('aConstant', 42);
-     var injector = createInjector(['myModule']);
-     injector.has('aConstant').should.be.true();
+    var module = window.angular.module('myModule', []);
+    module.constant('aConstant', 42);
+    var injector = createInjector(['myModule']);
+    injector.has('aConstant').should.be.true();
   });
 
 
   it('does not have a non-registered constant', function() {
-     var module = window.angular.module('myModule', []);
-     var injector = createInjector(['myModule']);
-     injector.has('aConstant').should.be.false();
+    var module = window.angular.module('myModule', []);
+    var injector = createInjector(['myModule']);
+    injector.has('aConstant').should.be.false();
   });
 
   it('does not allow a constant called hasOwnProperty', function() {
@@ -41,10 +41,10 @@ describe('injector', function() {
 
 
   it('can return a registered constant', function() {
-     var module = window.angular.module('myModule', []);
-     module.constant('aConstant', 42);
-     var injector = createInjector(['myModule']);
-     injector.get('aConstant').should.eql(42);
+    var module = window.angular.module('myModule', []);
+    module.constant('aConstant', 42);
+    var injector = createInjector(['myModule']);
+    injector.get('aConstant').should.eql(42);
   });
 
   it('loads multiple module', function () {
@@ -97,7 +97,7 @@ describe('injector', function() {
     module.constant('b', 2);
     var injector = createInjector(['myModule']);
 
-    var fn = function (one, two) { return one + two; }
+    var fn = function (one, two) { return one + two; };
     fn.$inject = ['a', 'b'];
 
     injector.invoke(fn).should.eql(3);
@@ -108,7 +108,7 @@ describe('injector', function() {
     module.constant('a', 1);
     var injector = createInjector(['myModule']);
 
-    var fn = function(one, two) { return one + two;}
+    var fn = function(one, two) { return one + two;};
     fn.$inject = ['a', 2];
 
     (function() {
@@ -405,7 +405,7 @@ describe('injector', function() {
 
       module.provider('a', function AProvider() {
         this.$get = function () {return 42;};
-      })
+      });
 
       var injector = createInjector(['myModule']);
       injector.get('a').should.eql(42);
@@ -416,8 +416,8 @@ describe('injector', function() {
 
       module.constant('b', 2);
       module.provider('a', function AProvider(b) {
-        this.$get = function () {return 1 + b};
-      })
+        this.$get = function () {return 1 + b;};
+      });
 
       var injector = createInjector(['myModule']);
       injector.get('a').should.eql(3);
@@ -468,9 +468,9 @@ describe('injector', function() {
         this.$get = function() {return 1;};
       });
 
-       module.provider('b', function BProvider() {
-        this.$get = function(aProvider) {return aProvider.$get();};
-      });
+      module.provider('b', function BProvider() {
+         this.$get = function(aProvider) {return aProvider.$get();};
+       });
 
       createInjector(['myModule']);
       (function () {
@@ -541,7 +541,7 @@ describe('injector', function() {
       var aProvider = $injector.get('aProvider');
       this.$get = function() {
         return aProvider.value;
-      }
+      };
     });
 
     var injector = createInjector(['myModule']);
@@ -762,7 +762,7 @@ describe('injector', function() {
     var module = window.angular.module('myModule', []);
 
     module.value('a', 42);
-    module.config(function(a){});
+    module.config(function(a) {});
 
     (function() {
       createInjector(['myModule']);
