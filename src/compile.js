@@ -193,6 +193,7 @@ function $CompileProvider($provide) {
       return function publicLinkFn(scope) {
         $compileNodes.data('$scope', scope);
         compositeLinkFn(scope, $compileNodes);
+        return $compileNodes;
       };
     }
 
@@ -232,14 +233,26 @@ function $CompileProvider($provide) {
         _.forEach(linkFns, function (linkFn) {
           var node = stableNodeList[linkFn.idx];
           if (linkFn.nodeLinkFn) {
+            var childScope;
             if (linkFn.nodeLinkFn.scope) {
-              scope = scope.$new();
-              $(node).data('$scope', scope);
+              childScope = scope.$new();
+              $(node).data('$scope', childScope);
+            } else {
+              childScope = scope;
             }
+
+            var boundTranscludeFn;
+            if (linkFn.nodeLinkFn.transcludeOnThisElement) {
+              boundTranscludeFn = function () {
+                return linkFn.nodeLinkFn.transclude(scope);
+              };
+            }
+
             linkFn.nodeLinkFn(
               linkFn.childLinkFn,
-              scope,
-              node
+              childScope,
+              node,
+              boundTranscludeFn
             );
           } else {
             linkFn.childLinkFn(
@@ -265,6 +278,7 @@ function $CompileProvider($provide) {
       var newIsolateScopeDirective = previousCompileContext.newIsolateScopeDirective;
       var templateDirective = previousCompileContext.templateDirective;
       var controllerDirectives = previousCompileContext.controllerDirectives;
+      var childTranscludeFn, hasTranscludeDirective;
 
       function getControllers(require, $element) {
         if (_.isArray(require)) {
@@ -344,6 +358,20 @@ function $CompileProvider($provide) {
           }
         }
 
+        if (directive.controller) {
+          controllerDirectives = controllerDirectives || {};
+          controllerDirectives[directive.name] = directive;
+        }
+
+        if (directive.transclude) {
+          if (hasTranscludeDirective) {
+            throw 'Multiple directives asking for transclude';
+          }
+          hasTranscludeDirective = true;
+          var $transcludedNodes = $compileNode.clone().contents();
+          childTranscludeFn = compile($transcludedNodes);
+          $compileNode.empty();
+        }
 
         if (directive.template) {
           if (templateDirective) {
@@ -391,15 +419,9 @@ function $CompileProvider($provide) {
           terminalPriority = directive.priority;
         }
 
-        if (directive.controller) {
-          controllerDirectives = controllerDirectives || {};
-          controllerDirectives[directive.name] = directive;
-        }
       });
 
-
-
-      function nodeLinkFn(childLinkFn, scope, linkNode) {
+      function nodeLinkFn(childLinkFn, scope, linkNode, boundTranscludeFn) {
         var $element = $(linkNode);
 
         var isolateScope;
@@ -456,7 +478,8 @@ function $CompileProvider($provide) {
             linkFn.isolateScope ? isolateScope : scope,
             $element,
             attrs,
-            linkFn.require && getControllers(linkFn.require, $element)
+            linkFn.require && getControllers(linkFn.require, $element),
+            boundTranscludeFn
           );
         });
 
@@ -473,12 +496,15 @@ function $CompileProvider($provide) {
             linkFn.isolateScope ? isolateScope : scope,
             $element,
             attrs,
-            linkFn.require && getControllers(linkFn.require, $element)
+            linkFn.require && getControllers(linkFn.require, $element),
+            boundTranscludeFn
           );
         });
       }
       nodeLinkFn.terminal = terminal;
       nodeLinkFn.scope = newScopeDirective && newScopeDirective.scope;
+      nodeLinkFn.transcludeOnThisElement = hasTranscludeDirective;
+      nodeLinkFn.transclude = childTranscludeFn;
       return nodeLinkFn;
     }
 

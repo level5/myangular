@@ -2787,4 +2787,137 @@ describe('$compile', function () {
 
   });
 
+  describe('transclude', function () {
+
+    it('removes the children of the element from the DOM', function () {
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {transclude: true};
+        }
+      });
+      injector.invoke(function($compile) {
+        var el = $('<div my-transcluder><div>Must go</div></div>');
+
+        $compile(el);
+        el.is(':empty').should.be.true();
+      });
+    });
+
+    it('compiles child elements', function () {
+      var insideCompileSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {transclude: true};
+        },
+        insideTranscluder: function () {
+          return {compile: insideCompileSpy};
+        }
+      });
+      injector.invoke(function($compile) {
+        var el = $('<div my-transcluder><div inside-transcluder></div></div>');
+
+        $compile(el);
+
+        insideCompileSpy.called.should.be.true();
+      });
+    });
+
+    it('makes contents available to directive link function.', function () {
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {
+            transclude: true,
+            template: '<div in-template></div>',
+            link: function (scope, element, attrs, ctrl, transclude) {
+              element.find('[in-template]').append(transclude());
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-transcluder><div in-transcluder></div></div>');
+
+        $compile(el)($rootScope);
+
+        el.find('> [in-template] > [in-transcluder]').length.should.eql(1);
+      });
+    });
+
+    it('is only allowed once per element', function () {
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {transclude: true};
+        },
+        mySecondTranscluder: function () {
+          return {transclude: true};
+        }
+      });
+      injector.invoke(function ($compile) {
+        var el = $('<div my-transcluder my-second-transcluder></div>');
+        (function () {
+          $compile(el);
+        }).should.throw();
+      });
+    });
+
+    it('makes scope available to link functions inside', function () {
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {
+            transclude: true,
+            link: function (scope, element, attrs, ctrl, transclude) {
+              element.append(transclude());
+            }
+          };
+        },
+        myInnerDirective: function () {
+          return {
+            link: function (scope, element) {
+              element.html(scope.anAttr);
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-transcluder><div my-inner-directive></div>');
+        $rootScope.anAttr = 'Hello from root';
+
+        $compile(el)($rootScope);
+
+        el.find('> [my-inner-directive]').html().should.eql('Hello from root');
+      });
+    });
+
+    it('does not use the inherited scope of the directive', function () {
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {
+            transclude: true,
+            scope: true,
+            link: function (scope, element, attrs, ctrl, transclude) {
+              scope.anAttr = 'Shadowed attribute';
+              element.append(transclude());
+            }
+          };
+        },
+        myInnerDirective: function () {
+          return {
+            link: function (scope, element) {
+              element.html(scope.anAttr);
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-transcluder><div my-inner-directive></div>');
+        $rootScope.anAttr = 'Hello from root';
+
+        $compile(el)($rootScope);
+
+        el.find('> [my-inner-directive]').html().should.eql('Hello from root');
+      });
+    });
+
+  });
+
 });
