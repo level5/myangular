@@ -465,14 +465,18 @@ describe('injector', function() {
       var module = window.angular.module('myModule', []);
 
       module.provider('a', function AProvider() {
-        this.$get = function() {return 1;};
+        this.$get = function() {
+          return 1;
+        };
       });
 
       module.provider('b', function BProvider() {
-         this.$get = function(aProvider) {return aProvider.$get();};
-       });
+        this.$get = function(aProvider) {
+          return aProvider.$get();
+        };
+      });
 
-      createInjector(['myModule']);
+      var injector = createInjector(['myModule']);
       (function () {
         injector.get('b');
       }).should.throw();
