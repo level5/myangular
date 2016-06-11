@@ -296,7 +296,8 @@ function $CompileProvider($provide) {
         var newIsolateScopeDirective = previousCompileContext.newIsolateScopeDirective;
         var templateDirective = previousCompileContext.templateDirective;
         var controllerDirectives = previousCompileContext.controllerDirectives;
-        var childTranscludeFn, hasTranscludeDirective;
+        var childTranscludeFn;
+        var hasTranscludeDirective = previousCompileContext.hasTranscludeDirective;
 
         function getControllers(require, $element) {
           if (_.isArray(require)) {
@@ -413,9 +414,10 @@ function $CompileProvider($provide) {
               {
                 templateDirective: templateDirective,
                 newIsolateScopeDirective: newIsolateScopeDirective,
+                controllerDirectives: controllerDirectives,
+                hasTranscludeDirective: hasTranscludeDirective,
                 preLinkFns: preLinkFns,
-                postLinkFns: postLinkFns,
-                controllerDirectives: controllerDirectives
+                postLinkFns: postLinkFns
               }
             );
             return false;
@@ -493,6 +495,11 @@ function $CompileProvider($provide) {
           });
 
           function scopeBoundTranscludeFn (transcludedScope, cloneAttachFn) {
+            if(!transcludedScope || !transcludedScope.$watch ||
+                !transcludedScope.$evalAsync) {
+              cloneAttachFn = transcludedScope;
+              transcludedScope = undefined;
+            }
             return boundTranscludeFn(transcludedScope, cloneAttachFn, scope);
           }
           scopeBoundTranscludeFn.$$boundTransclude = boundTranscludeFn;
@@ -540,10 +547,13 @@ function $CompileProvider($provide) {
     ) {
         var origAsyncDirective = directives.shift();
         var derivedSyncDirective = _.extend(
-        {},
-        origAsyncDirective,
-        {templateUrl: null}
-      );
+          {},
+          origAsyncDirective,
+          {
+            templateUrl: null,
+            transclude: null
+          }
+        );
         var templateUrl = _.isFunction(origAsyncDirective.templateUrl) ?
                         origAsyncDirective.templateUrl($compileNode, attrs) :
                         origAsyncDirective.templateUrl;
@@ -558,17 +568,20 @@ function $CompileProvider($provide) {
           afterTemplateChildLinkFn = compileNodes($compileNode[0].childNodes);
           _.forEach(linkQueue, function (linkCall) {
             afterTemplateNodeLinkFn(
-              afterTemplateChildLinkFn, linkCall.scope, linkCall.linkNode
+              afterTemplateChildLinkFn,
+              linkCall.scope,
+              linkCall.linkNode,
+              linkCall.boundTranscludeFn
             );
           });
           linkQueue = null;
         });
 
-        return function delayedNodeLinkFn(_ignoreChildLinkFn, scope, linkNode) {
+        return function delayedNodeLinkFn(_ignoreChildLinkFn, scope, linkNode, boundTranscludeFn) {
           if (linkQueue) {
-            linkQueue.push({scope: scope, linkNode: linkNode});
+            linkQueue.push({scope: scope, linkNode: linkNode, boundTranscludeFn: boundTranscludeFn});
           } else {
-            afterTemplateNodeLinkFn(afterTemplateChildLinkFn, scope, linkNode);
+            afterTemplateNodeLinkFn(afterTemplateChildLinkFn, scope, linkNode, boundTranscludeFn);
           }
         };
       }
