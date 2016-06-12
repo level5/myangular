@@ -3558,6 +3558,63 @@ describe('$compile', function () {
         el.find('[my-double]').length.should.eql(2);
       });
     });
+    
+    it('sets directive attributes element to comment', function () {
+      var injector = makeInjectorWithDirective({
+        myTranscluder: function () {
+          return {
+            transclude: 'element',
+            link: function (scoe, element, attrs, ctrl, transclude) {
+              attrs.$set('testing', '42');
+              element.after(transclude());
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div><div my-transcluder></div></div>');
+        
+        $compile(el)($rootScope);
+        should(el.find('[my-transcluder]').attr('testing')).be.undefined();
+      });
+    });
+    
+    it('supports requiring controllers', function () {
+      var MyController = function() {};
+      var gotCtrl;
+      var injector = makeInjectorWithDirective({
+        myCtrlDirective: function () {
+          return {controller: MyController};
+        },
+        myTranscluder: function () {
+          return {
+            transclude: 'element',
+            link: function (scope, el, attrs, ctrl, transclude) {
+              console.log('vv', el);
+              el.after(transclude());
+            }
+          };
+        },
+        myOtherDirective: function () {
+          return {
+            require: '^myCtrlDirective',
+            link: function (scope, el, attrs, ctrl, transclude) {
+              console.log('GG', el, attrs);
+              gotCtrl = ctrl;
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $(
+          '<div><div my-ctrl-directive my-transcluder><div my-other-directive></div></div></div>'
+        );
+        $compile(el)($rootScope);
+        console.log('XXX', el, gotCtrl instanceof MyController);
+        gotCtrl.should.be.Object();
+        gotCtrl.should.be.instanceOf(MyController);
+      });
+    });
 
   });
 
