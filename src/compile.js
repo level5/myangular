@@ -155,7 +155,9 @@ function $CompileProvider($provide) {
         this.$$obserers[key] = this.$$obserers[key] || [];
         this.$$obserers[key].push(fn);
         $rootScope.$evalAsync(function () {
-          fn(self[key]);
+          if (!self.$$obserers[key].$$inter) {
+            fn(self[key]);
+          }
         });
         return function () {
           var index = self.$$obserers[key].indexOf(fn);
@@ -615,11 +617,11 @@ function $CompileProvider($provide) {
           switch (definition.mode) {
             case '@':
               attrs.$observe(attrName, function (newAttrValue) {
-                  destination[scopeName] = newAttrValue;
-                });
+                destination[scopeName] = newAttrValue;
+              });
               if (attrs[attrName]) {
-                  destination[scopeName] = attrs[attrName];
-                }
+                destination[scopeName] = $interpolate(attrs[attrName])(scope);
+              }
               break;
             case '=':
               if (definition.optional && !attrs[attrName]) {
@@ -718,6 +720,7 @@ function $CompileProvider($provide) {
               }
             }
             normalizedAttrName = directiveNormalize(name.toLowerCase());
+            addAttrInterpolateDirective(directives, attr.value, normalizedAttrName);
             addDirective(directives, normalizedAttrName, 'A', maxPrority,
                             attrStartName, attrEndName);
             if (isNgAttr || !attrs.hasOwnProperty(normalizedAttrName)) {
@@ -753,6 +756,28 @@ function $CompileProvider($provide) {
         return directives;
       }
 
+      function addAttrInterpolateDirective(directives, value, name) {
+        var interpolateFn = $interpolate(value, true);
+        if (interpolateFn) {
+          directives.push({
+            priority: 100,
+            compile: function () {
+              return {
+                pre: function link(scope, element, attrs) {
+                  attrs.$$obserers = attrs.$$obserers || {};
+                  attrs.$$obserers[name] = attrs.$$obserers[name] || [];
+                  attrs.$$obserers[name].$$inter = true;
+                  attrs[name] = interpolateFn(scope);
+                  scope.$watch(interpolateFn, function (newValue) {
+                    attrs.$set(name, newValue); 
+                  });
+                }
+              };
+            }
+          });
+        }
+      }
+
       function addTextInterpolateDirective(directives, text) {
         var interpolateFn = $interpolate(text, true);
         if (interpolateFn) {
@@ -760,7 +785,7 @@ function $CompileProvider($provide) {
             priority: 0,
             compile: function () {
               return function link(scope, element) {
-                var bindings = element.parent.data('$binding') || [];
+                var bindings = element.parent().data('$binding') || [];
                 bindings = bindings.concat(interpolateFn.expressions);
                 element.parent().data('$binding', bindings);
                 element.parent().addClass('ng-binding');

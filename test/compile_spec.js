@@ -3663,6 +3663,124 @@ describe('$compile', function () {
         el.data('$binding').should.eql(['myExpr', 'myOtherExpr']);
       });
     });
+    
+    it('is done for attributes', function () {
+      var injector = makeInjectorWithDirective({});
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<img alt="{{myAltText}}">');
+        $compile(el)($rootScope);
+        
+        $rootScope.$apply();
+        el.attr('alt').should.eql('');
+
+        $rootScope.myAltText = 'My favourite photo';
+        $rootScope.$apply();
+        el.attr('alt').should.eql('My favourite photo');
+      });
+    });
+
+    it('fires observers on attribute expression changes', function () {
+      var observerSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            link: function (scope, element, attrs) {
+              attrs.$observe('alt', observerSpy);
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<img alt="{{myAltText}}" my-directive>');
+        $compile(el)($rootScope);
+
+        $rootScope.myAltText = 'My favourite photo';
+        $rootScope.$apply();
+        observerSpy.args[observerSpy.args.length - 1][0].should.eql('My favourite photo');
+        
+      });
+    });
+
+    it('fires observers just once upon registration', function () {
+      var observerSpy = sinon.spy();
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            link: function (scope, element, attrs) {
+              attrs.$observe('alt', observerSpy);
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<img alt="{{myAltText}}" my-directive>');
+        $compile(el)($rootScope);
+        $rootScope.$apply();
+        observerSpy.callCount.should.eql(1);
+      });
+    });
+
+    it('is done for attributes by the time other directive is linked', function () {
+      var gotMyAttr;
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            link: function (scope, element, attrs) {
+              gotMyAttr = attrs.myAttr;  
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-attr="{{myExpr}}"></div>');
+        $rootScope.myExpr = 'Hello';
+        $compile(el)($rootScope);
+
+        gotMyAttr.should.eql('Hello');
+      });
+    });
+
+    it('is done for attributes by the time bound to iso scope', function () {
+      var gotMyAttr;
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            scope: {myAttr: '@'},
+            link: function (scope, element, attrs) {
+              console.log('xagxddd');
+              gotMyAttr = scope.myAttr;
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-attr="{{myExpr}}"></div>');
+        $rootScope.myExpr = 'Hello';
+        $compile(el)($rootScope);
+        gotMyAttr.should.eql('Hello');
+      });
+    });
+
+    it('is done for attributes so that compile-time changes apply', function () {
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            compile: function (element, attrs) {
+              attrs.$set('myAttr', '{{myDifferentExpr}}');
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-direcitve my-attr="{{myExpr}}"></div>');
+        $rootScope.myExpr= 'Hello';
+        $rootScope.myDifferentExpr = 'Other Hello';
+        $compile(el)($rootScope);
+        $rootScope.$apply();
+
+        el.attr('my-attr').should.eql('Other Hello');
+      });
+    });
 
   });
 
