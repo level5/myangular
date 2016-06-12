@@ -3772,13 +3772,45 @@ describe('$compile', function () {
         }
       });
       injector.invoke(function ($compile, $rootScope) {
-        var el = $('<div my-direcitve my-attr="{{myExpr}}"></div>');
+        var el = $('<div my-directive my-attr="{{myExpr}}"></div>');
         $rootScope.myExpr= 'Hello';
         $rootScope.myDifferentExpr = 'Other Hello';
         $compile(el)($rootScope);
         $rootScope.$apply();
 
         el.attr('my-attr').should.eql('Other Hello');
+      });
+    });
+
+    it('is done for attributes so that compile-time removals apply', function () {
+      var injector = makeInjectorWithDirective({
+        myDirective: function () {
+          return {
+            compile: function (element, attrs) {
+              attrs.$set('myAttr', null);
+            }
+          };
+        }
+      });
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div my-directive my-attr="{{myExpr}}"></div>');
+        $rootScope.myExpr= 'Hello';
+        $rootScope.myDifferentExpr = 'Other Hello';
+        $compile(el)($rootScope);
+        $rootScope.$apply();
+
+        should(el.attr('my-attr')).be.undefined();
+      });     
+    });
+
+    it('cannot be done for event handler attributes', function () {
+      var injector = makeInjectorWithDirective({});
+      injector.invoke(function ($compile, $rootScope) {
+        $rootScope.myFunction = function() {};
+        var el = $('<button onclick="{{myFunction()}}"></button>');
+        (function() {
+          $compile(el)($rootScope);
+        }).should.throw();
       });
     });
 
