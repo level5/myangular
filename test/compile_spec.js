@@ -3610,9 +3610,57 @@ describe('$compile', function () {
           '<div><div my-ctrl-directive my-transcluder><div my-other-directive></div></div></div>'
         );
         $compile(el)($rootScope);
-        console.log('XXX', el, gotCtrl instanceof MyController);
         gotCtrl.should.be.Object();
         gotCtrl.should.be.instanceOf(MyController);
+      });
+    });
+
+  });
+
+  describe('interpolation', function () {
+    
+    it('is done for text nodes', function () {
+      var injector = makeInjectorWithDirective({});
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div>My expression: {{myExpr}}</div>');
+        $compile(el)($rootScope);
+        
+        $rootScope.$apply();
+        el.html().should.eql('My expression: ');
+
+        $rootScope.myExpr = 'Hello';
+        $rootScope.$apply();
+        el.html().should.eql('My expression: Hello');
+      });
+    });
+
+    it('adds binding class to text node parents', function () {
+      
+      var injector = makeInjectorWithDirective({});
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div>My expression: {{myExpr}}</div>');
+        $compile(el)($rootScope);
+        el.hasClass('ng-binding').should.be.true();
+      });
+
+    });
+
+    it('adds binding data to text node parents', function () {
+      var injector = makeInjectorWithDirective({});
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div>{{myExpr}} and {{myOtherExpr}}</div>');
+        $compile(el)($rootScope);
+
+        el.data('$binding').should.eql(['myExpr', 'myOtherExpr']);
+      });
+    });
+
+    it('adds binding data to parent from multiple text nodes', function () {
+      var injector = makeInjectorWithDirective({});
+      injector.invoke(function ($compile, $rootScope) {
+        var el = $('<div>{{myExpr}} <span>and</span> {{myOtherExpr}}<div>');
+        $compile(el)($rootScope);
+        el.data('$binding').should.eql(['myExpr', 'myOtherExpr']);
       });
     });
 

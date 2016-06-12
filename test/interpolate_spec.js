@@ -99,4 +99,30 @@ describe('$interpolate', function () {
     var interp = $interpolate('{{anObject}}');
     interp({anObject: {a: 1, b: '2'}}).should.eql('{"a":1,"b":"2"}');
   });
+
+  it('unescapes escaped sequences', function () {
+    var injector = createInjector(['ng']);
+    var $interpolate = injector.get('$interpolate');
+
+    var interp = $interpolate('\\{\\{expr\\}\\} {{expr}} \\{\\{expr\\}\\}');
+    interp({expr: 'value'}).should.eql('{{expr}} value {{expr}}');
+    
+  });
+
+  it('does not return function when flagged and no expressions', function () {
+    var injector = createInjector(['ng']);
+    var $interpolate = injector.get('$interpolate');
+
+    var interp = $interpolate('static content only', true);
+    should(interp).be.undefined();
+  });
+
+  it('returns function when flagged and has expressions', function () {
+    var injector = createInjector(['ng']);
+    var $interpolate = injector.get('$interpolate');
+
+    var interp = $interpolate('has an {{expr}}', true);
+    interp.should.be.Function();
+  });
+
 });

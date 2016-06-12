@@ -113,8 +113,9 @@ function $CompileProvider($provide) {
     }
   };
 
-  this.$get = ['$injector', '$parse', '$controller', '$rootScope', '$http',
-    function ($injector, $parse, $controller, $rootScope, $http) {
+  this.$get = ['$injector', '$parse', '$controller', 
+                '$rootScope', '$http', '$interpolate',
+    function ($injector, $parse, $controller, $rootScope, $http, $interpolate) {
 
       function Attributes(element) {
         this.$$element = element;
@@ -745,9 +746,31 @@ function $CompileProvider($provide) {
               attrs[normalizedName] = match[2] ? match[2].trim() : undefined;
             }
           }
+        } else if (node.nodeType === node.TEXT_NODE) {
+          addTextInterpolateDirective(directives, node.nodeValue);
         }
         directives.sort(byPriority);
         return directives;
+      }
+
+      function addTextInterpolateDirective(directives, text) {
+        var interpolateFn = $interpolate(text, true);
+        if (interpolateFn) {
+          directives.push({
+            priority: 0,
+            compile: function () {
+              return function link(scope, element) {
+                var bindings = element.parent.data('$binding') || [];
+                bindings = bindings.concat(interpolateFn.expressions);
+                element.parent().data('$binding', bindings);
+                element.parent().addClass('ng-binding');
+                scope.$watch(interpolateFn, function (newValue) {
+                  element[0].nodeValue = newValue; 
+                });
+              };
+            }
+          });
+        }
       }
 
       function directiveIsMultiElement(name) {
