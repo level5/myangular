@@ -1,0 +1,63 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'c:\\Program Files\\nodejs\\node.exe',
+1 verbose cli   'c:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js',
+1 verbose cli   'install',
+1 verbose cli   '--save-dev',
+1 verbose cli   'uglifyjs' ]
+2 info using npm@3.3.12
+3 info using node@v5.3.0
+4 silly loadCurrentTree Starting
+5 silly install loadCurrentTree
+6 silly install readLocalPackageData
+7 silly fetchPackageMetaData uglifyjs
+8 silly fetchNamedPackageData uglifyjs
+9 silly mapToRegistry name uglifyjs
+10 silly mapToRegistry using default registry
+11 silly mapToRegistry registry http://registry.npmjs.org/
+12 silly mapToRegistry uri http://registry.npmjs.org/uglifyjs
+13 verbose request uri http://registry.npmjs.org/uglifyjs
+14 verbose request no auth needed
+15 info attempt registry request try #1 at 22:46:53
+16 verbose request id dac5fb16fac39a32
+17 http request GET http://registry.npmjs.org/uglifyjs
+18 info retry will retry, error on last attempt: Error: connect ETIMEDOUT fd39:ec0d:499a:7777::10d8:eb14:8080
+19 info attempt registry request try #2 at 22:47:25
+20 http request GET http://registry.npmjs.org/uglifyjs
+21 info retry will retry, error on last attempt: Error: connect ETIMEDOUT fd39:ec0d:499a:7777::10d8:eb14:8080
+22 info attempt registry request try #3 at 22:48:46
+23 http request GET http://registry.npmjs.org/uglifyjs
+24 silly fetchPackageMetaData Error: connect ETIMEDOUT fd39:ec0d:499a:7777::10d8:eb14:8080
+24 silly fetchPackageMetaData     at Object.exports._errnoException (util.js:855:11)
+24 silly fetchPackageMetaData     at exports._exceptionWithHostPort (util.js:878:20)
+24 silly fetchPackageMetaData     at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1063:14)
+24 silly fetchPackageMetaData  error for uglifyjs { [Error: connect ETIMEDOUT fd39:ec0d:499a:7777::10d8:eb14:8080]
+24 silly fetchPackageMetaData   code: 'ETIMEDOUT',
+24 silly fetchPackageMetaData   errno: 'ETIMEDOUT',
+24 silly fetchPackageMetaData   syscall: 'connect',
+24 silly fetchPackageMetaData   address: 'fd39:ec0d:499a:7777::10d8:eb14',
+24 silly fetchPackageMetaData   port: 8080 }
+25 silly rollbackFailedOptional Starting
+26 silly rollbackFailedOptional Finishing
+27 silly runTopLevelLifecycles Starting
+28 silly runTopLevelLifecycles Finishing
+29 silly install printInstalled
+30 verbose stack Error: connect ETIMEDOUT fd39:ec0d:499a:7777::10d8:eb14:8080
+30 verbose stack     at Object.exports._errnoException (util.js:855:11)
+30 verbose stack     at exports._exceptionWithHostPort (util.js:878:20)
+30 verbose stack     at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1063:14)
+31 verbose cwd c:\github\myangular
+32 error Windows_NT 6.1.7601
+33 error argv "c:\\Program Files\\nodejs\\node.exe" "c:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "install" "--save-dev" "uglifyjs"
+34 error node v5.3.0
+35 error npm  v3.3.12
+36 error code ETIMEDOUT
+37 error errno ETIMEDOUT
+38 error syscall connect
+39 error network connect ETIMEDOUT fd39:ec0d:499a:7777::10d8:eb14:8080
+39 error network This is most likely not a problem with npm itself
+39 error network and is related to network connectivity.
+39 error network In most cases you are behind a proxy or have bad network settings.
+39 error network
+39 error network If you are behind a proxy, please make sure that the
+39 error network 'proxy' config is set properly.  See: 'npm help config'
+40 verbose exit [ 1, true ]

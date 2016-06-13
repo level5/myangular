@@ -125,4 +125,70 @@ describe('$interpolate', function () {
     interp.should.be.Function();
   });
 
+  it('use a watch delegate', function () {
+    var injector = createInjector(['ng']);
+    var $interpolate = injector.get('$interpolate');
+    var interp = $interpolate('has an {{expr}}');
+    interp.$$watchDelegate.should.be.Function();
+  });
+
+  it('correctly returns new and old value when watched', function () {
+    var injector = createInjector(['ng']);
+    var $interpolate = injector.get('$interpolate');
+    var $rootScope = injector.get('$rootScope');
+
+    var interp = $interpolate('{{expr}}');
+    var listenerSpy = sinon.spy();
+
+    $rootScope.$watch(interp, listenerSpy);
+    $rootScope.expr = 42;
+
+    $rootScope.$apply();
+    listenerSpy.args[listenerSpy.args.length - 1][0].should.eql('42');
+
+    $rootScope.expr++;
+    $rootScope.$apply();
+
+    listenerSpy.args[listenerSpy.args.length - 1][0].should.eql('43');
+    listenerSpy.args[listenerSpy.args.length - 1][1].should.eql('42');
+  });
+
+  it('allows configuring start and end symbols', function () {
+    var injector = createInjector(['ng', function ($interpolateProvider) {
+      $interpolateProvider.startSymbol('FOO').endSymbol('OOF');
+    }]);
+    var $interpolate = injector.get('$interpolate');
+    $interpolate.startSymbol().should.eql('FOO');
+    $interpolate.endSymbol().should.eql('OOF');
+  });
+
+  it('works with start and end symbols that differ from default', function () {
+    var injector = createInjector(['ng', function ($interpolateProvider) {
+      $interpolateProvider.startSymbol('FOO').endSymbol('OOF');
+    }]);
+
+    var $interpolate = injector.get('$interpolate');
+    var interpFn = $interpolate('FOOmyExprOOF');
+    interpFn({myExpr: 42}).should.eql('42');
+  });
+
+  it('does not work with default symbols when reconfigured', function () {
+    var injector = createInjector(['ng', function ($interpolateProvider) {
+      $interpolateProvider.startSymbol('FOO').endSymbol('OOF');
+    }]);
+    var $interpolate = injector.get('$interpolate');
+    var interpFn = $interpolate('{{myExpr}}');
+    interpFn({myExpr: 42}).should.eql('{{myExpr}}');
+  });
+
+  it('supports unescaping for reconfigured symbols', function () {
+    var injector = createInjector(['ng', function ($interpolateProvider) {
+      $interpolateProvider.startSymbol('FOO').endSymbol('OOF');
+    }]);
+    var $interpolate = injector.get('$interpolate');
+    var interpFn = $interpolate('\\F\\O\\OmyExpr\\O\\O\\F');
+    interpFn({}).should.eql('FOOmyExprOOF');
+  });
+
+
 });
